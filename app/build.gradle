@@ -40,12 +40,12 @@ android {
     publishNonDefault true
 
     defaultConfig {
-        applicationId "eu.kanade.tachiyomi.eh2"
+        applicationId "eu.kanade.tachiyomi.az"
         minSdkVersion 16
         targetSdkVersion 27
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         versionCode 7405
-        versionName "v7.4.5-EH"
+        versionName "v7.4.5-AZ"
 
         buildConfigField "String", "COMMIT_COUNT", "\"${getCommitCount()}\""
         buildConfigField "String", "COMMIT_SHA", "\"${getGitSha()}\""
