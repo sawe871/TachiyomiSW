@@ -40,7 +40,17 @@ class NHentai(context: Context) : ParsedHttpSource() {
 //    override fun queryAll() = NHentaiMetadata.EmptyQuery()
 //    override fun queryFromUrl(url: String) = NHentaiMetadata.UrlQuery(url)
 
-
+//compat with old EH extension
+    override fun mangaDetailsRequest(manga: SManga): Request {
+        return GET(baseUrl + "/g/" + manga.url.split("/").last { it.isNotBlank() }, headers)
+    }
+    override fun fetchMangaDetails(manga: SManga): Observable<SManga> {
+        return client.newCall(mangaDetailsRequest(manga))
+                .asObservableSuccess()
+                .map { response ->
+                    mangaDetailsParse(response).apply { initialized = true }
+                }
+    }
 
     override fun headersBuilder(): Headers.Builder {
 	return Headers.Builder()
@@ -160,18 +170,4 @@ class NHentai(context: Context) : ParsedHttpSource() {
 
 
 //    override val metaParser: NHentaiMetadata.(JsonObject) -> Unit = {}
-
-//compat with old EH extension
-    override fun fetchMangaDetails(manga: SManga): Observable<SManga> {
-        return client.newCall(mangaDetailsRequest(manga))
-                .asObservableSuccess()
-                .map { response ->
-                    mangaDetailsParse(response).apply { initialized = true }
-                }
-    }
-
-    override fun mangaDetailsRequest(manga: SManga): Request {
-        return GET(manga.url, headers)
-    }
-
 }
