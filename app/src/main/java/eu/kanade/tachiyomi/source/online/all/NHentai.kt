@@ -101,8 +101,12 @@ class NHentai(context: Context) : ParsedHttpSource() {
     override fun latestUpdatesFromElement(element: Element) = SManga.create().apply {
         setUrlWithoutDomain(element.select("a").attr("href"))
         title = element.select("a > div").text().replace("\"", "").trim()
+	if(Injekt.get<PreferencesHelper>().eh_nh_useHighQualityThumbs().getOrDefault()) {
+		thumbnail_url = element.select("a > img").attr("data-src").replace("t.nh", "i.nh").replace("t.", ".")
+	}else{
+		thumbnail_url = element.select("a > img").attr("data-src")
+	}
     }
-
     override fun latestUpdatesNextPageSelector() = "#content > section.pagination > a.next"
 
     override fun latestUpdatesRequest(page: Int) = GET("$baseUrl/?page=$page", headers)
@@ -111,7 +115,7 @@ class NHentai(context: Context) : ParsedHttpSource() {
 
     override fun mangaDetailsParse(document: Document) = SManga.create().apply {
         title = document.select("#info > h1").text().replace("\"", "").trim()
-        thumbnail_url = document.select("#cover > a > img").attr("data-src")
+        //thumbnail_url = document.select("#cover > a > img").attr("data-src")
         status = SManga.COMPLETED
         artist = getArtists(document)
         author = artist
@@ -141,6 +145,11 @@ class NHentai(context: Context) : ParsedHttpSource() {
     override fun popularMangaFromElement(element: Element) = SManga.create().apply {
         setUrlWithoutDomain(element.select("a").attr("href"))
         title = element.select("a > div").text().replace("\"", "").trim()
+	if(Injekt.get<PreferencesHelper>().eh_nh_useHighQualityThumbs().getOrDefault()) {
+		thumbnail_url = element.select("a > img").attr("data-src").replace("t.nh", "i.nh").replace("t.", ".")
+	}else{
+		thumbnail_url = element.select("a > img").attr("data-src")
+	}
     }
 
     override fun popularMangaNextPageSelector() = "#content > section.pagination > a.next"
@@ -154,6 +163,11 @@ class NHentai(context: Context) : ParsedHttpSource() {
     override fun searchMangaFromElement(element: Element) = SManga.create().apply {
         setUrlWithoutDomain(element.select("a").attr("href"))
         title = element.select("a > div").text().replace("\"", "").trim()
+	if(Injekt.get<PreferencesHelper>().eh_nh_useHighQualityThumbs().getOrDefault()) {
+		thumbnail_url = element.select("a > img").attr("data-src").replace("t.nh", "i.nh").replace("t.", ".")
+	}else{
+		thumbnail_url = element.select("a > img").attr("data-src")
+	}
     }
 
     override fun searchMangaNextPageSelector() = "#content > section.pagination > a.next"
