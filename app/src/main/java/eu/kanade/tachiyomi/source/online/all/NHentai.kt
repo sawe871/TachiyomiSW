@@ -159,6 +159,17 @@ class NHentai(context: Context) : ParsedHttpSource() {
 
 //    override val metaParser: NHentaiMetadata.(JsonObject) -> Unit = {}
 
+//compat with old EH extension
+    override fun fetchMangaDetails(manga: SManga): Observable<SManga> {
+        return client.newCall(mangaDetailsRequest(manga))
+                .asObservableSuccess()
+                .map { response ->
+                    mangaDetailsParse(response).apply { initialized = true }
+                }
+    }
 
+    override fun mangaDetailsRequest(manga: SManga): Request {
+        return GET(manga.url, headers)
+    }
 
 }
