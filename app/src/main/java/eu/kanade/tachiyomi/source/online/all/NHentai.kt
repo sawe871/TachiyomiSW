@@ -60,16 +60,6 @@ class NHentai(context: Context) : ParsedHttpSource() {
     private val searchUrl = "$baseUrl/search"
 
     override fun chapterFromElement(element: Element) = throw UnsupportedOperationException("Not used")
-    override fun fetchChapterList(manga: SManga)
-            = lazyLoadMetadata(manga.url).map {
-        listOf(SChapter.create().apply {
-            url = manga.url
-            name = "Chapter"
-            date_upload = ((it.uploadDate ?: 0) * 1000)
-            chapter_number = 1f
-        })
-    }!!
-
 //    override fun fetchSearchManga(page: Int, query: String, filters: FilterList) =
   //          urlImportFetchSearchManga(query, {
     //            super.searchMangaRequest(page, query, filters)
@@ -84,7 +74,7 @@ class NHentai(context: Context) : ParsedHttpSource() {
             date_upload = getTime(document)
             setUrlWithoutDomain(response.request().url().encodedPath())
         }
-
+	chapter.url = response.request().url().encodedPath()
         chapterList.add(chapter)
 
         return chapterList
