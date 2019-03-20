@@ -1,246 +1,164 @@
 package eu.kanade.tachiyomi.source.online.all
 
-import android.content.Context
-import android.net.Uri
-import com.github.salomonbrys.kotson.*
-import com.google.gson.JsonElement
-import com.google.gson.JsonNull
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
-import eu.kanade.tachiyomi.BuildConfig
-import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.network.GET
-import eu.kanade.tachiyomi.network.asObservableSuccess
-import eu.kanade.tachiyomi.source.model.*
-import eu.kanade.tachiyomi.source.online.HttpSource
-import eu.kanade.tachiyomi.source.online.LewdSource
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import eu.kanade.tachiyomi.data.preference.getOrDefault
 import exh.NHENTAI_SOURCE_ID
 import exh.metadata.models.NHentaiMetadata
 import exh.metadata.models.PageImageType
 import exh.metadata.models.Tag
+
+import exh.util.NHUtils.Companion.getArtists
+import exh.util.NHUtils.Companion.getGroups
+import exh.util.NHUtils.Companion.getTags
+import exh.util.NHUtils.Companion.getTime
+
+import com.google.gson.JsonObject
 import exh.util.*
-import okhttp3.Request
-import okhttp3.Response
-import rx.Observable
-import timber.log.Timber
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
+import eu.kanade.tachiyomi.network.GET
+import eu.kanade.tachiyomi.source.model.*
+import eu.kanade.tachiyomi.source.online.ParsedHttpSource
+import eu.kanade.tachiyomi.source.online.LewdSource
+import eu.kanade.tachiyomi.util.asJsoup
+import okhttp3.*
+import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
+import java.net.URLEncoder
+import android.content.Context
+import eu.kanade.tachiyomi.source.model.Filter
 
-/**
- * NHentai source
- */
+class SortFilter : Filter.Select<String>("Sort", arrayOf("Popular", "Date"))
 
-class NHentai(context: Context) : HttpSource(), LewdSource<NHentaiMetadata, JsonObject> {
-    override fun fetchPopularManga(page: Int): Observable<MangasPage> {
-        //TODO There is currently no way to get the most popular mangas
-        //TODO Instead, we delegate this to the latest updates thing to avoid confusing users with an empty screen
-        return fetchLatestUpdates(page)
+class NHentai(context: Context) : ParsedHttpSource() {
+    final override val baseUrl = "https://nhentai.net"
+    override val name = "nhentai"
+    override val supportsLatest = true
+    override val client = network.cloudflareClient
+    override val lang = "all"
+    override val id = NHENTAI_SOURCE_ID
+//    override fun queryAll() = NHentaiMetadata.EmptyQuery()
+//    override fun queryFromUrl(url: String) = NHentaiMetadata.UrlQuery(url)
+
+
+
+    override fun headersBuilder(): Headers.Builder {
+	return Headers.Builder()
+		.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.92 Safari/537.36")
     }
 
-    override fun popularMangaRequest(page: Int): Request {
-        TODO("Currently unavailable!")
-    }
+    private val searchUrl = "$baseUrl/search"
 
-    override fun popularMangaParse(response: Response): MangasPage {
-        TODO("Currently unavailable!")
-    }
+    override fun chapterFromElement(element: Element) = throw UnsupportedOperationException("Not used")
 
-    //Support direct URL importing
-    override fun fetchSearchManga(page: Int, query: String, filters: FilterList) =
-            urlImportFetchSearchManga(query, {
-                super.fetchSearchManga(page, query, filters)
-            })
-
-    override fun searchMangaRequest(page: Int, query: String, filters: FilterList): Request {
-        //Currently we have no filters
-        //TODO Filter builder
-        val uri = Uri.parse("$baseUrl/api/galleries/search").buildUpon()
-        uri.appendQueryParameter("query", query)
-        uri.appendQueryParameter("page", page.toString())
-        return nhGet(uri.toString(), page)
-    }
-
-    override fun searchMangaParse(response: Response)
-            = parseResultPage(response)
-
-    override fun latestUpdatesRequest(page: Int): Request {
-        val uri = Uri.parse("$baseUrl/api/galleries/all").buildUpon()
-        uri.appendQueryParameter("page", page.toString())
-        return nhGet(uri.toString(), page)
-    }
-
-    override fun latestUpdatesParse(response: Response)
-            = parseResultPage(response)
-
-    override fun mangaDetailsParse(response: Response): SManga {
-        val obj = jsonParser.parse(response.body()!!.string()).asJsonObject
-        return parseToManga(NHentaiMetadata.Query(obj["id"].long), obj)
-    }
-
-    //Used so we can use a different URL for fetching manga details and opening the details in the browser
-    override fun fetchMangaDetails(manga: SManga): Observable<SManga> {
-        return client.newCall(urlToDetailsRequest(manga.url))
-                .asObservableSuccess()
-                .map { response ->
-                    mangaDetailsParse(response).apply { initialized = true }
-                }
-    }
-
-    override fun mangaDetailsRequest(manga: SManga)
-            = nhGet(manga.url)
-
-    fun urlToDetailsRequest(url: String)
-            = nhGet(baseUrl + "/api/gallery/" + url.split("/").last { it.isNotBlank() })
-
-    fun parseResultPage(response: Response): MangasPage {
-        val res = jsonParser.parse(response.body()!!.string()).asJsonObject
-
-        val error = res.get("error")
-        if(error == null) {
-            val results = res.getAsJsonArray("result")?.map {
-                val obj = it.asJsonObject
-                parseToManga(NHentaiMetadata.Query(obj["id"].long), obj)
-            }
-            val numPages = res.get("num_pages")?.int
-            if(results != null && numPages != null)
-                return MangasPage(results, numPages > response.request().tag() as Int)
-        } else {
-            Timber.w("An error occurred while performing the search: $error")
-        }
-        return MangasPage(emptyList(), false)
-    }
-
-    override val metaParser: NHentaiMetadata.(JsonObject) -> Unit = { obj ->
-        nhId = obj["id"].asLong
-
-        uploadDate = obj["upload_date"].nullLong
-
-        favoritesCount = obj["num_favorites"].nullLong
-
-        mediaId = obj["media_id"].nullString
-
-        obj["title"].nullObj?.let { it ->
-            japaneseTitle = it["japanese"].nullString
-            shortTitle = it["pretty"].nullString
-            englishTitle = it["english"].nullString
-        }
-
-        obj["images"].nullObj?.let {
-            coverImageType = it["cover"]?.get("t").nullString
-            it["pages"].nullArray?.mapNotNull {
-                it?.asJsonObject?.get("t").nullString
-            }?.map {
-                PageImageType(it)
-            }?.let {
-                pageImageTypes.clear()
-                pageImageTypes.addAll(it)
-            }
-            thumbnailImageType = it["thumbnail"]?.get("t").nullString
-        }
-
-        scanlator = obj["scanlator"].nullString
-
-        obj["tags"]?.asJsonArray?.map {
-            val asObj = it.asJsonObject
-            Pair(asObj["type"].nullString, asObj["name"].nullString)
-        }?.apply {
-            tags.clear()
-        }?.forEach {
-            if(it.first != null && it.second != null)
-                tags.add(Tag(it.first!!, it.second!!, false))
-        }
-    }
-
-    fun lazyLoadMetadata(url: String) =
-            defRealm { realm ->
-                val meta = NHentaiMetadata.UrlQuery(url).query(realm).findFirst()
-                if(meta == null) {
-                    client.newCall(urlToDetailsRequest(url))
-                            .asObservableSuccess()
-                            .map {
-                                realmTrans { realm ->
-                                    realm.copyFromRealm(realm.createUUIDObj(queryAll().clazz.java).apply {
-                                        metaParser(this,
-                                                jsonParser.parse(it.body()!!.string()).asJsonObject)
-                                    })
-                                }
-                            }
-                            .first()
-                } else {
-                    Observable.just(realm.copyFromRealm(meta))
-                }
-            }
-
-    override fun fetchChapterList(manga: SManga)
-            = lazyLoadMetadata(manga.url).map {
-        listOf(SChapter.create().apply {
-            url = manga.url
-            name = "Chapter"
-            date_upload = ((it.uploadDate ?: 0) * 1000)
-            chapter_number = 1f
-        })
-    }!!
-
-    override fun fetchPageList(chapter: SChapter)
-            = lazyLoadMetadata(chapter.url).map { metadata ->
-        if(metadata.mediaId == null) emptyList()
-        else
-            metadata.pageImageTypes.mapIndexed { index, s ->
-                val imageUrl = imageUrlFromType(metadata.mediaId!!, index + 1, s.type!!)
-                Page(index, imageUrl!!, imageUrl)
-            }
-    }!!
-
-    override fun fetchImageUrl(page: Page) = Observable.just(page.imageUrl!!)!!
-
-    fun imageUrlFromType(mediaId: String, page: Int, t: String) = NHentaiMetadata.typeToExtension(t)?.let {
-        "https://i.nhentai.net/galleries/$mediaId/$page.$it"
-    }
+//    override fun fetchSearchManga(page: Int, query: String, filters: FilterList) =
+  //          urlImportFetchSearchManga(query, {
+    //            super.searchMangaRequest(page, query, filters)
+      //      })
 
     override fun chapterListParse(response: Response): List<SChapter> {
-        throw NotImplementedError("Unused method called!")
-    }
-
-    override fun pageListParse(response: Response): List<Page> {
-        throw NotImplementedError("Unused method called!")
-    }
-
-    override fun imageUrlParse(response: Response): String {
-        throw NotImplementedError("Unused method called!")
-    }
-
-    val appName by lazy {
-        context.getString(R.string.app_name)!!
-    }
-    fun nhGet(url: String, tag: Any? = null) = GET(url)
-            .newBuilder()
-            .header("User-Agent",
-                    "Mozilla/5.0 (X11; Linux x86_64) " +
-                            "AppleWebKit/537.36 (KHTML, like Gecko) " +
-                            "Chrome/56.0.2924.87 " +
-                            "Safari/537.36 " +
-                            "$appName/${BuildConfig.VERSION_CODE}")
-            .tag(tag).build()!!
-
-    override val id = NHENTAI_SOURCE_ID
-
-    override val lang = "all"
-
-    override val name = "nhentai"
-
-    override val baseUrl = NHentaiMetadata.BASE_URL
-
-    override val supportsLatest = true
-
-    override fun queryAll() = NHentaiMetadata.EmptyQuery()
-    override fun queryFromUrl(url: String) = NHentaiMetadata.UrlQuery(url)
-
-    companion object {
-        val jsonParser by lazy {
-            JsonParser()
+        val document = response.asJsoup()
+        val chapterList = mutableListOf<SChapter>()
+        val chapter = SChapter.create().apply {
+            name = "Chapter"
+            scanlator = getGroups(document)
+            date_upload = getTime(document)
+            setUrlWithoutDomain(response.request().url().encodedPath())
         }
+
+        chapterList.add(chapter)
+
+        return chapterList
     }
 
-    fun JsonElement.notNull() =
-            if(this is JsonNull)
-                null
-            else this
+    override fun chapterListRequest(manga: SManga): Request = GET("$baseUrl${manga.url}", headers)
+
+    override fun chapterListSelector() = throw UnsupportedOperationException("Not used")
+
+    override fun getFilterList(): FilterList = FilterList(SortFilter())
+
+    override fun imageUrlParse(document: Document) = throw UnsupportedOperationException("Not used")
+
+    override fun latestUpdatesFromElement(element: Element) = SManga.create().apply {
+        setUrlWithoutDomain(element.select("a").attr("href"))
+        title = element.select("a > div").text().replace("\"", "").trim()
+    }
+
+    override fun latestUpdatesNextPageSelector() = "#content > section.pagination > a.next"
+
+    override fun latestUpdatesRequest(page: Int) = GET("$baseUrl/?page=$page", headers)
+
+    override fun latestUpdatesSelector() = "#content > div > div"
+
+    override fun mangaDetailsParse(document: Document) = SManga.create().apply {
+        title = document.select("#info > h1").text().replace("\"", "").trim()
+        thumbnail_url = document.select("#cover > a > img").attr("data-src")
+        status = SManga.COMPLETED
+        artist = getArtists(document)
+        author = artist
+        description = getTags(document)
+    }
+
+    override fun pageListParse(document: Document): List<Page> {
+        val pageElements = document.select("#thumbnail-container > div")
+        val pageList = mutableListOf<Page>()
+
+        pageElements.forEach {
+            Page(pageList.size).run {
+		if(Injekt.get<PreferencesHelper>().eh_nh_useHighQualityThumbs().getOrDefault()) {
+	                this.imageUrl = it.select("a > img").attr("data-src")
+		} else {
+			this.imageUrl = it.select("a > img").attr("data-src").replace("t.nh", "i.nh").replace("t.", ".")
+		}
+                pageList.add(pageList.size, this)
+            }
+        }
+
+        return pageList
+    }
+
+    override fun pageListRequest(chapter: SChapter) = GET("$baseUrl${chapter.url}", headers)
+
+    override fun popularMangaFromElement(element: Element) = SManga.create().apply {
+        setUrlWithoutDomain(element.select("a").attr("href"))
+        title = element.select("a > div").text().replace("\"", "").trim()
+    }
+
+    override fun popularMangaNextPageSelector() = "#content > section.pagination > a.next"
+
+    override fun popularMangaRequest(page: Int) = GET("$baseUrl/language/translated/popular?page=$page", headers)
+
+    override fun popularMangaSelector() = "#content > div > div"
+
+    override fun searchMangaFromElement(element: Element) = SManga.create().apply {
+        setUrlWithoutDomain(element.select("a").attr("href"))
+        title = element.select("a > div").text().replace("\"", "").trim()
+    }
+
+    override fun searchMangaNextPageSelector() = "#content > section.pagination > a.next"
+
+    override fun searchMangaRequest(page: Int, query: String, filters: FilterList): Request {
+        val stringBuilder = StringBuilder()
+        stringBuilder.append(searchUrl)
+        stringBuilder.append("/?q=${URLEncoder.encode("$query", "UTF-8")}&")
+
+        filters.forEach {
+            when (it) {
+                is SortFilter -> stringBuilder.append("sort=${it.values[it.state].toLowerCase()}&")
+            }
+        }
+
+        stringBuilder.append("page=$page")
+
+        return GET(stringBuilder.toString(), headers)
+    }
+
+
+    override fun searchMangaSelector() = "#content > div > div"
+
+
+//    override val metaParser: NHentaiMetadata.(JsonObject) -> Unit = {}
+
+
+
 }
