@@ -80,7 +80,7 @@ class NHentai(context: Context) : ParsedHttpSource() {
         return chapterList
     }
 
-    override fun chapterListRequest(manga: SManga): Request = GET("${manga.url}", headers)
+    override fun chapterListRequest(manga: SManga): Request = GET("$baseUrl${manga.url}", headers)
 
     override fun chapterListSelector() = throw UnsupportedOperationException("Not used")
 
@@ -135,9 +135,9 @@ class NHentai(context: Context) : ParsedHttpSource() {
 
     override fun popularMangaNextPageSelector() = "#content > section.pagination > a.next"
 
-    //override fun popularMangaRequest(page: Int) = GET("$baseUrl/language/translated/popular?page=$page", headers)
+    override fun popularMangaRequest(page: Int) = GET("$baseUrl/language/translated/popular?page=$page", headers)
 	
-    override fun popularMangaRequest(page: Int) = GET("$baseUrl/popular?page=$page", headers)//this is broken on purpose. causes 429s
+    //override fun popularMangaRequest(page: Int) = GET("$baseUrl/popular?page=$page", headers)//this is broken on purpose. causes 429s
 	
     override fun popularMangaSelector() = "#content > div > div"
 
