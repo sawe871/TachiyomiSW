@@ -80,7 +80,10 @@ class NHentai(context: Context) : ParsedHttpSource() {
         return chapterList
     }
 
-    override fun chapterListRequest(manga: SManga): Request = GET("$baseUrl${manga.url}", headers)
+    override fun chapterListRequest(manga: SManga): Request {
+        return GET(baseUrl + "/g/" + manga.url.split("/").last { it.isNotBlank() }, headers)
+    }
+
 
     override fun chapterListSelector() = throw UnsupportedOperationException("Not used")
 
