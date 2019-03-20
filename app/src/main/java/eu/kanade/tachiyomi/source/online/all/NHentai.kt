@@ -31,10 +31,17 @@ import eu.kanade.tachiyomi.source.model.Filter
 class SortFilter : Filter.Select<String>("Sort", arrayOf("Popular", "Date"))
 
 class NHentai(context: Context) : ParsedHttpSource() {
+
+    override val client: OkHttpClient = network.cloudflareClient.newBuilder().addInterceptor { chain ->
+        val url = chain.request().url().toString()
+         // ghetto throttlin
+	Thread.sleep(250)
+         chain.proceed(chain.request())
+    }.build()
+
     final override val baseUrl = "https://nhentai.net"
     override val name = "nhentai"
     override val supportsLatest = true
-    override val client = network.cloudflareClient
     override val lang = "all"
     override val id = NHENTAI_SOURCE_ID
 //    override fun queryAll() = NHentaiMetadata.EmptyQuery()
