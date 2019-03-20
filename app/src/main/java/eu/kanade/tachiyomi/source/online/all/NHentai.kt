@@ -106,7 +106,7 @@ class NHentai(context: Context) : ParsedHttpSource() {
         pageElements.forEach {
             Page(pageList.size).run {
 		if(Injekt.get<PreferencesHelper>().eh_nh_useHighQualityThumbs().getOrDefault()) {
-	                this.imageUrl = it.select("a > img").attr("data-src")
+	                this.imageUrl = it.select("a > img").attr("data-src").replace("t.nh", "i.nh").replace("t.", ".")
 		} else {
 			this.imageUrl = it.select("a > img").attr("data-src").replace("t.nh", "i.nh").replace("t.", ".")
 		}
