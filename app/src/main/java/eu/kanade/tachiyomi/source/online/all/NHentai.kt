@@ -125,8 +125,10 @@ class NHentai(context: Context) : ParsedHttpSource() {
 
     override fun popularMangaNextPageSelector() = "#content > section.pagination > a.next"
 
-    override fun popularMangaRequest(page: Int) = GET("$baseUrl/language/translated/popular?page=$page", headers)
-
+    //override fun popularMangaRequest(page: Int) = GET("$baseUrl/language/translated/popular?page=$page", headers)
+	
+    override fun popularMangaRequest(page: Int) = GET("$baseUrl/popular?page=$page", headers)//this is broken on purpose. causes 429s
+	
     override fun popularMangaSelector() = "#content > div > div"
 
     override fun searchMangaFromElement(element: Element) = SManga.create().apply {
