@@ -25,6 +25,7 @@ import okhttp3.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import java.net.URLEncoder
+import java.lang.StringBuilder
 import android.content.Context
 import eu.kanade.tachiyomi.source.model.Filter
 
@@ -120,6 +121,16 @@ class NHentai(context: Context) : ParsedHttpSource() {
         artist = getArtists(document)
         author = artist
         description = getTags(document)
+	val stringBuilder = StringBuilder()
+	val tags = document.select("#tags > div:nth-child(3) > span > a")
+        if (tags.size > 0) {
+            tags.forEach {
+                stringBuilder.append(cleanTag(it.text()))
+                if (it != tags.last())
+                    stringBuilder.append(", ")
+            }
+        }
+	genre = stringBuilder.toString()
     }
 
     override fun pageListParse(document: Document): List<Page> {
