@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="v7.4.7-EH" changeDate="">
+        <changelogtext>Backported tachiyomi cloudflare 503 fix</changelogtext>
+        <changelogtext>Fixed NHentai extension spamming requests</changelogtext>
+    </changelogversion>
     <changelogversion versionName="v7.4.6-EH" changeDate="">
         <changelogtext>Backported tachiyomi NHentai extension</changelogtext>
     </changelogversion>
