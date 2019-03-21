@@ -125,7 +125,7 @@ class NHentai(context: Context) : ParsedHttpSource() {
 	val tags = document.select("#tags > div:nth-child(3) > span > a")
         if (tags.size > 0) {
             tags.forEach {
-                stringBuilder.append(cleanTag(it.text()))
+                stringBuilder.append(it.text().replace(Regex("\\(.*\\)"), "").trim())
                 if (it != tags.last())
                     stringBuilder.append(", ")
             }
