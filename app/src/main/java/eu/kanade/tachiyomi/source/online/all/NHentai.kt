@@ -116,7 +116,7 @@ class NHentai(context: Context) : ParsedHttpSource() {
 
     override fun mangaDetailsParse(document: Document) = SManga.create().apply {
         title = document.select("#info > h1").text().replace("\"", "").trim()
-        //thumbnail_url = document.select("#cover > a > img").attr("data-src")
+        thumbnail_url = document.select("#cover > a > img").attr("data-src")
         status = SManga.COMPLETED
         artist = getArtists(document)
         author = artist
