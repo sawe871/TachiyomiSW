@@ -9,7 +9,6 @@ import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.data.preference.getOrDefault
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.all.EHentai
-import eu.kanade.tachiyomi.source.online.all.Hitomi
 import eu.kanade.tachiyomi.source.online.all.NHentai
 import eu.kanade.tachiyomi.source.online.all.PervEden
 import eu.kanade.tachiyomi.source.online.english.*
@@ -101,7 +100,6 @@ open class SourceManager(private val context: Context) {
         exSrcs += NHentai(context)
         exSrcs += HentaiCafe()
         exSrcs += Tsumino(context)
-        exSrcs += Hitomi(context)
         return exSrcs
     }
 
