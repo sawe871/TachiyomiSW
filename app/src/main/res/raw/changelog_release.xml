@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="v7.4.8-EH" changeDate="">
+        <changelogtext>Backported another tachiyomi cloudflare fix</changelogtext>
+        <changelogtext>Removed hitomi support. It sucked anyway and was breaking source migration/all gallery search.</changelogtext>
+    </changelogversion>
     <changelogversion versionName="v7.4.7-EH" changeDate="">
         <changelogtext>Backported tachiyomi cloudflare 503 fix</changelogtext>
         <changelogtext>Fixed NHentai extension spamming requests</changelogtext>
