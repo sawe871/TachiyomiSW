@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
-    <changelogversion versionName="v8.2.1-EH" changeDate="">
+    <changelogversion versionName="v8.2.1-AZ" changeDate="">
         <changelogtext>Merged new Tachiyomi commits</changelogtext>
         <changelogtext>Minor bugfix with saving images</changelogtext>
     </changelogversion>
