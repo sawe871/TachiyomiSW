@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.main
 
 import android.animation.ObjectAnimator
+import android.app.SearchManager
 import android.app.ActivityManager
 import android.app.Service
 import android.app.usage.UsageStatsManager
@@ -21,6 +22,7 @@ import eu.kanade.tachiyomi.data.preference.getOrDefault
 import eu.kanade.tachiyomi.ui.base.activity.BaseActivity
 import eu.kanade.tachiyomi.ui.base.controller.*
 import eu.kanade.tachiyomi.ui.catalogue.CatalogueController
+import eu.kanade.tachiyomi.ui.catalogue.global_search.CatalogueSearchController
 import eu.kanade.tachiyomi.ui.download.DownloadController
 import eu.kanade.tachiyomi.ui.extension.ExtensionController
 import eu.kanade.tachiyomi.ui.library.LibraryController
@@ -218,6 +220,17 @@ class MainActivity : BaseActivity() {
                     setSelectedDrawerItem(R.id.nav_drawer_downloads)
                 }
             }
+            Intent.ACTION_SEARCH, "com.google.android.gms.actions.SEARCH_ACTION" -> {
+                //If the intent match the "standard" Android search intent
+                // or the Google-specific search intent (triggered by saying or typing "search *query* on *Tachiyomi*" in Google Search/Google Assistant)
+
+                 setSelectedDrawerItem(R.id.nav_drawer_catalogues)
+                //Get the search query provided in extras, and if not null, perform a global search with it.
+                intent.getStringExtra(SearchManager.QUERY)?.also { query ->
+                    router.pushController(CatalogueSearchController(query).withFadeTransaction())
+                }
+            }
+
             else -> return false
         }
         return true
