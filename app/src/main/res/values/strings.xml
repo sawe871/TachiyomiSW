@@ -516,5 +516,6 @@
     <string name="pref_category_eh">E-Hentai</string>
     <string name="pref_category_nh">nhentai</string>
     <string name="pref_category_hl">hitomi.la</string>
+    <string name="pref_category_dx">MangaDex</string>
 
 </resources>
