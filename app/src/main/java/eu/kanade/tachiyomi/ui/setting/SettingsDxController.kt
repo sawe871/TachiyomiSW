@@ -31,7 +31,7 @@ class SettingsDxController : SettingsController() {
 	override fun setupPreferenceScreen(screen: PreferenceScreen) = with(screen) {
 		title = source.name
 		preference {
-			titleRes = R.string.pref_theme // TODO change this thing's name
+			titleRes = R.string.label_login // TODO change this thing's name
 			onClick {
 				openLoginWebview()
 			}
