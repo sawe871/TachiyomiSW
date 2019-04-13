@@ -39,7 +39,7 @@ class SettingsDxController : SettingsController() {
 	}
 	private fun openLoginWebview() {
 		// TODO - inject JS into login page webview
-		val script="""var logout=function(){$.ajax({url:'https://mangadex.org/ajax/actions.ajax.php?function=logout',type:'post',success:function(h){location.reload(true)}})};var div=$("<div />",{html:"<style>body>:not(#content),#content>*:not(#login_container),#forgot_button,#signup_button,[id='2fa_field']+div{display:none}</style>"}).appendTo("body");if($("#login_container p").length){$("#login_container p")[0].innerHTML='<button onclick="logout()" tabindex="5" class="btn btn-lg btn-danger btn-block" type="submit" id="login_button"><span class="fas fa-sign-out-alt fa-fw " aria-hidden="true"></span>Log Out</button>'}else{$("#remember_me")[0].checked=1}"""
+		val script="""var logout=function(){$.ajax({url:'https://mangadex.org/ajax/actions.ajax.php?function=logout',type:'post',success:function(h){location.reload(true)}})};var div=$("<div />",{html:"<style>body>:not(#content),#content>*:not(#login_container),#forgot_button,#signup_button,[id='2fa_field']+div{display:none}</style>"}).appendTo("body");if($("#login_container p").length){$("#login_container p")[0].innerHTML='<button onmousedown="logout()" tabindex="5" class="btn btn-lg btn-danger btn-block" type="submit" id="login_button"><span class="fas fa-sign-out-alt fa-fw " aria-hidden="true"></span>Log Out</button>'}else{$("#remember_me")[0].checked=1}"""
 		router.pushController(MangaWebViewController(id, "https://mangadex.org/login", js=script).withFadeTransaction())
 	}
 
