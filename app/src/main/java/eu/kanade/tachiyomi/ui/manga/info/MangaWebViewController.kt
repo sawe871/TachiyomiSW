@@ -16,9 +16,10 @@ class MangaWebViewController(bundle: Bundle? = null) : BaseController(bundle) {
 
     private val sourceManager by injectLazy<SourceManager>()
 
-    constructor(sourceId: Long, url: String) : this(Bundle().apply {
+    constructor(sourceId: Long, url: String, js: String = "") : this(Bundle().apply {
         putLong(SOURCE_KEY, sourceId)
         putString(URL_KEY, url)
+        putString(JS_KEY, js)
     })
 
     override fun inflateView(inflater: LayoutInflater, container: ViewGroup): View {
@@ -37,6 +38,10 @@ class MangaWebViewController(bundle: Bundle? = null) : BaseController(bundle) {
                 view.loadUrl(url)
                 return true
             }
+            override fun onPageFinished(view: WebView, url: String) {
+                super.onPageFinished(view, url)
+                view.loadUrl("javascript:(function() {${args.getString(JS_KEY)}})();")
+            }
         }
         web.settings.javaScriptEnabled = true
         web.settings.userAgentString = source.headers["User-Agent"]
@@ -53,6 +58,7 @@ class MangaWebViewController(bundle: Bundle? = null) : BaseController(bundle) {
     private companion object {
         const val SOURCE_KEY = "source_key"
         const val URL_KEY = "url_key"
+        const val JS_KEY = "js_key"
     }
 
 }

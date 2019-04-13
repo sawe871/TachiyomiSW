@@ -39,7 +39,8 @@ class SettingsDxController : SettingsController() {
 	}
 	private fun openLoginWebview() {
 		// TODO - inject JS into login page webview
-		router.pushController(MangaWebViewController(id, "https://mangadex.org/login").withFadeTransaction())
+		val script="""var div=$("<div />",{html:"<style>body>:not(#content),#content>*:not(#login_container),#forgot_button,#signup_button,[id='2fa_field']+div{display:none}</style>"}).appendTo("body");$("#remember_me")[0].checked=1"""
+		router.pushController(MangaWebViewController(id, "https://mangadex.org/login", js=script).withFadeTransaction())
 	}
 
 }
