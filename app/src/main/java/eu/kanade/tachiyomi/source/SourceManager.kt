@@ -69,6 +69,8 @@ open class SourceManager(private val context: Context) {
 
     fun getCatalogueSources() = sourcesMap.values.filterIsInstance<CatalogueSource>()
 
+    fun getSources() = sourcesMap.values.toList()
+
     internal fun registerSource(source: Source, overwrite: Boolean = false) {
         val sourceQName = source::class.qualifiedName
         val delegate = DELEGATED_SOURCES[sourceQName]
