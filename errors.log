@@ -2,21 +2,3 @@ Note: /home/server/Tachiyomi/app/src/main/java/eu/kanade/tachiyomi/ui/base/prese
 Note: Recompile with -Xlint:unchecked for details.
 Note: /home/server/Tachiyomi/app/src/main/java/eu/kanade/tachiyomi/ui/base/presenter/NucleusConductorDelegate.java uses unchecked or unsafe operations.
 Note: Recompile with -Xlint:unchecked for details.
-Warning: kotlinx.atomicfu.AtomicFU: can't find referenced method 'void setInterceptor(kotlinx.atomicfu.AtomicOperationInterceptor)' in program class kotlinx.atomicfu.InterceptorKt
-Warning: there were 1 unresolved references to program class members.
-         Your input classes appear to be inconsistent.
-         You may need to recompile the code.
-         (http://proguard.sourceforge.net/manual/troubleshooting.html#unresolvedprogramclassmember)
-
-FAILURE: Build failed with an exception.
-
-* What went wrong:
-Execution failed for task ':app:transformClassesAndResourcesWithProguardForStandardRelease'.
-> Job failed, see logs for details
-
-* Try:
-Run with --stacktrace option to get the stack trace. Run with --info or --debug option to get more log output. Run with --scan to get full insights.
-
-* Get more help at https://help.gradle.org
-
-BUILD FAILED in 5m 47s

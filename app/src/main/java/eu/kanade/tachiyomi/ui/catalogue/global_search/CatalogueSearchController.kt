@@ -21,9 +21,12 @@ import uy.kohesive.injekt.injectLazy
  * This controller should only handle UI actions, IO actions should be done by [CatalogueSearchPresenter]
  * [CatalogueSearchCardAdapter.OnMangaClickListener] called when manga is clicked in global search
  */
-open class CatalogueSearchController(protected val initialQuery: String? = null) :
-        NucleusController<CatalogueSearchPresenter>(),
-        CatalogueSearchCardAdapter.OnMangaClickListener, CatalogueSearchAdapter.OnMoreClickListener {
+open class CatalogueSearchController(
+        protected val initialQuery: String? = null,
+        protected val extensionFilter: String? = null
+) : NucleusController<CatalogueSearchPresenter>(),
+        CatalogueSearchCardAdapter.OnMangaClickListener,
+        CatalogueSearchAdapter.OnMoreClickListener {
 
     /**
      * Application preferences.
@@ -68,7 +71,7 @@ open class CatalogueSearchController(protected val initialQuery: String? = null)
      * @return instance of [CatalogueSearchPresenter]
      */
     override fun createPresenter(): CatalogueSearchPresenter {
-        return CatalogueSearchPresenter(initialQuery)
+        return CatalogueSearchPresenter(initialQuery, extensionFilter)
     }
 
     /**
