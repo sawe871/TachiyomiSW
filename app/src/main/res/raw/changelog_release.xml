@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    
+    <changelogversion versionName="v8.3.0-AZ" changeDate="">
+        <changelogtext>Merged new Tachiyomi commits</changelogtext>
+        <changelogtext>Changed the app name</changelogtext>
+        <changelogtext>Mangadex login support</changelogtext>
+    </changelogversion>
+    
     <changelogversion versionName="v8.2.1-AZ" changeDate="">
         <changelogtext>Merged new Tachiyomi commits</changelogtext>
         <changelogtext>Minor bugfix with saving images</changelogtext>
