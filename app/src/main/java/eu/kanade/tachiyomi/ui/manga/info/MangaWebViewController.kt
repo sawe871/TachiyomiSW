@@ -34,13 +34,13 @@ class MangaWebViewController(bundle: Bundle? = null) : BaseController(bundle) {
 
         val web = view as WebView
         web.webViewClient = object : WebViewClientCompat() {
-            override fun shouldOverrideUrlCompat(view: WebView, url: String): Boolean {
-                view.loadUrl(url)
-                return true
-            }
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
                 view.loadUrl("javascript:(function() {${args.getString(JS_KEY)}})();")
+            }
+            override fun shouldOverrideUrlCompat(view: WebView, url: String): Boolean {
+                view.loadUrl(url)
+                return true
             }
         }
         web.settings.javaScriptEnabled = true
