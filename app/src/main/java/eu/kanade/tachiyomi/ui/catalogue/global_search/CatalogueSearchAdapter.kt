@@ -5,6 +5,7 @@ import android.os.Parcelable
 import android.support.v7.widget.RecyclerView
 import android.util.SparseArray
 import eu.davidea.flexibleadapter.FlexibleAdapter
+import eu.kanade.tachiyomi.source.CatalogueSource
 
 /**
  * Adapter that holds the search cards.
@@ -15,11 +16,16 @@ class CatalogueSearchAdapter(val controller: CatalogueSearchController) :
         FlexibleAdapter<CatalogueSearchItem>(null, controller, true) {
 
     /**
+     * Listen for more button clicks.
+     */
+    val moreClickListener: OnMoreClickListener = controller
+
+    /**
      * Bundle where the view state of the holders is saved.
      */
     private var bundle = Bundle()
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: List<Any?>?) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: List<Any?>) {
         super.onBindViewHolder(holder, position, payloads)
         restoreHolderState(holder)
     }
@@ -66,6 +72,10 @@ class CatalogueSearchAdapter(val controller: CatalogueSearchController) :
             holder.itemView.restoreHierarchyState(holderState)
             bundle.remove(key)
         }
+    }
+
+    interface OnMoreClickListener {
+        fun onMoreClick(source: CatalogueSource)
     }
 
     private companion object {

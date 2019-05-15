@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="eu.kanade.tachiyomi">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -10,6 +11,14 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <uses-permission android:name="android.permission.GET_TASKS" />
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <!-- Lock vibrate -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:name=".App"
@@ -17,15 +26,18 @@
         android:fullBackupContent="@xml/backup_rules"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:largeHeap="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/Theme.Tachiyomi">
         <activity
             android:name=".ui.main.MainActivity"
-            android:launchMode="singleTop">
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
@@ -33,9 +45,15 @@
                 <action android:name="com.google.android.gms.actions.SEARCH_ACTION"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
+            <intent-filter>
+                <action android:name="eu.kanade.tachiyomi.SEARCH" />
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
             <meta-data android:name="android.app.searchable" android:resource="@xml/searchable"/>
-            <!--suppress AndroidDomInspection -->
-            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
+            <!-- suppress AndroidDomInspection -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
         <activity
             android:name=".ui.reader.ReaderActivity" />
@@ -74,7 +92,7 @@
 
         <activity
             android:name=".extension.util.ExtensionInstallActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"
@@ -93,23 +111,121 @@
         <service
             android:name=".data.library.LibraryUpdateService"
             android:exported="false" />
-
         <service
             android:name=".data.download.DownloadService"
             android:exported="false" />
-
         <service
             android:name=".data.updater.UpdaterService"
             android:exported="false" />
-
         <service
             android:name=".data.backup.BackupCreateService"
-            android:exported="false"/>
-
+            android:exported="false" />
         <service
             android:name=".data.backup.BackupRestoreService"
-            android:exported="false"/>
+            android:exported="false" />
 
+        <!-- EH -->
+        <service
+            android:name="exh.eh.EHentaiUpdateWorker"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
+        <activity
+            android:name="exh.ui.intercept.InterceptActivity"
+            android:label="TachiyomiEH"
+            android:theme="@style/Theme.EHActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="g.e-hentai.org"
+                    android:pathPrefix="/g/"
+                    android:scheme="http" />
+                <data
+                    android:host="g.e-hentai.org"
+                    android:pathPrefix="/g/"
+                    android:scheme="https" />
+                <data
+                    android:host="e-hentai.org"
+                    android:pathPrefix="/g/"
+                    android:scheme="http" />
+                <data
+                    android:host="e-hentai.org"
+                    android:pathPrefix="/g/"
+                    android:scheme="https" />
+                <data
+                    android:host="exhentai.org"
+                    android:pathPrefix="/g/"
+                    android:scheme="http" />
+                <data
+                    android:host="exhentai.org"
+                    android:pathPrefix="/g/"
+                    android:scheme="https" />
+                <data
+                    android:host="nhentai.net"
+                    android:pathPrefix="/g/"
+                    android:scheme="http" />
+                <data
+                    android:host="nhentai.net"
+                    android:pathPrefix="/g/"
+                    android:scheme="https" />
+                <data
+                    android:host="www.perveden.com"
+                    android:pathPattern="/.*/.*-manga/.*"
+                    android:scheme="http" />
+                <data
+                    android:host="www.perveden.com"
+                    android:pathPattern="/.*/.*-manga/.*"
+                    android:scheme="https" />
+                <data
+                    android:host="hentai.cafe"
+                    android:pathPattern="/.*/.*"
+                    android:scheme="http" />
+                <data
+                    android:host="hentai.cafe"
+                    android:pathPattern="/.*/.*"
+                    android:scheme="https" />
+                <data
+                    android:host="www.tsumino.com"
+                    android:pathPrefix="/Book/Info/"
+                    android:scheme="http" />
+                <data
+                    android:host="www.tsumino.com"
+                    android:pathPrefix="/Book/Info/"
+                    android:scheme="https" />
+                <data
+                    android:host="www.tsumino.com"
+                    android:pathPrefix="/Read/View/"
+                    android:scheme="http" />
+                <data
+                    android:host="www.tsumino.com"
+                    android:pathPrefix="/Read/View/"
+                    android:scheme="https" />
+                <data
+                    android:host="hitomi.la"
+                    android:pathPrefix="/galleries/"
+                    android:scheme="http" />
+                <data
+                    android:host="hitomi.la"
+                    android:pathPrefix="/reader/"
+                    android:scheme="http" />
+                <data
+                    android:host="hitomi.la"
+                    android:pathPrefix="/galleries/"
+                    android:scheme="https" />
+                <data
+                    android:host="hitomi.la"
+                    android:pathPrefix="/reader/"
+                    android:scheme="https" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="exh.ui.captcha.BrowserActionActivity"
+            android:launchMode="singleInstance"
+            android:theme="@style/Theme.EHActivity" />
+        <activity android:name="exh.ui.webview.WebViewActivity" />
     </application>
 
 </manifest>

@@ -11,6 +11,8 @@ import android.support.v7.view.ActionMode
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.view.*
+import com.bluelinelabs.conductor.RouterTransaction
+import com.elvishew.xlog.XLog
 import com.jakewharton.rxbinding.support.v4.widget.refreshes
 import com.jakewharton.rxbinding.view.clicks
 import eu.davidea.flexibleadapter.FlexibleAdapter
@@ -26,7 +28,10 @@ import eu.kanade.tachiyomi.ui.reader.ReaderActivity
 import eu.kanade.tachiyomi.util.getCoordinates
 import eu.kanade.tachiyomi.util.snack
 import eu.kanade.tachiyomi.util.toast
+import exh.EH_SOURCE_ID
+import exh.EXH_SOURCE_ID
 import kotlinx.android.synthetic.main.chapters_controller.*
+import rx.android.schedulers.AndroidSchedulers
 import timber.log.Timber
 
 class ChaptersController : NucleusController<ChaptersPresenter>(),
@@ -103,6 +108,14 @@ class ChaptersController : NucleusController<ChaptersPresenter>(),
                 view.context.toast(R.string.no_next_chapter)
             }
         }
+
+        presenter.redirectUserRelay
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeUntilDestroy { redirect ->
+                    XLog.d("Redirecting to updated manga (manga.id: %s, manga.title: %s, update: %s)!", redirect.manga.id, redirect.manga.title, redirect.update)
+                    // Replace self
+                    parentController?.router?.replaceTopController(RouterTransaction.with(MangaController(redirect)))
+                }
     }
 
     override fun onDestroyView(view: View) {
@@ -187,6 +200,12 @@ class ChaptersController : NucleusController<ChaptersPresenter>(),
         if (presenter.chapters.isEmpty())
             initialFetchChapters()
 
+        if ((parentController as MangaController).update
+                // Auto-update old format galleries
+                || ((presenter.manga.source == EH_SOURCE_ID || presenter.manga.source == EXH_SOURCE_ID)
+                        && chapters.size == 1 && chapters.first().date_upload == 0L))
+            fetchChaptersFromSource()
+
         val adapter = adapter ?: return
         adapter.updateDataSet(chapters)
 
@@ -223,6 +242,13 @@ class ChaptersController : NucleusController<ChaptersPresenter>(),
     fun onFetchChaptersError(error: Throwable) {
         swipe_refresh?.isRefreshing = false
         activity?.toast(error.message)
+        // [EXH]
+        XLog.w("> Failed to fetch chapters!", error)
+        XLog.w("> (source.id: %s, source.name: %s, manga.id: %s, manga.url: %s)",
+                presenter.source.id,
+                presenter.source.name,
+                presenter.manga.id,
+                presenter.manga.url)
     }
 
     fun onChapterStatusChange(download: Download) {
@@ -242,7 +268,7 @@ class ChaptersController : NucleusController<ChaptersPresenter>(),
         startActivity(intent)
     }
 
-    override fun onItemClick(position: Int): Boolean {
+    override fun onItemClick(view: View, position: Int): Boolean {
         val adapter = adapter ?: return false
         val item = adapter.getItem(position) ?: return false
         if (actionMode != null && adapter.mode == SelectableAdapter.Mode.MULTI) {

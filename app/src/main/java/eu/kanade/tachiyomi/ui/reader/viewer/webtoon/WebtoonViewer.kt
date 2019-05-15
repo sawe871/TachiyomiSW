@@ -7,6 +7,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import com.elvishew.xlog.XLog
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
 import eu.kanade.tachiyomi.ui.reader.model.ChapterTransition
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
@@ -48,7 +49,7 @@ class WebtoonViewer(val activity: ReaderActivity) : BaseViewer {
     /**
      * Currently active item. It can be a chapter page or a chapter transition.
      */
-    private var currentPage: Any? = null
+    /* [EXH] private */ var currentPage: Any? = null
 
     /**
      * Configuration used by this viewer, like allow taps, or crop image borders.
@@ -67,7 +68,7 @@ class WebtoonViewer(val activity: ReaderActivity) : BaseViewer {
         recycler.layoutManager = layoutManager
         recycler.adapter = adapter
         recycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 val position = layoutManager.findLastEndVisibleItemPosition()
                 val item = adapter.items.getOrNull(position)
                 if (item != null && currentPage != item) {
@@ -98,11 +99,13 @@ class WebtoonViewer(val activity: ReaderActivity) : BaseViewer {
         recycler.longTapListener = f@ { event ->
             if (activity.menuVisible || config.longTapEnabled) {
                 val child = recycler.findChildViewUnder(event.x, event.y)
-                val position = recycler.getChildAdapterPosition(child)
-                val item = adapter.items.getOrNull(position)
-                if (item is ReaderPage) {
-                    activity.onPageLongTap(item)
-                    return@f true
+                if(child != null) {
+                    val position = recycler.getChildAdapterPosition(child)
+                    val item = adapter.items.getOrNull(position)
+                    if (item is ReaderPage) {
+                        activity.onPageLongTap(item)
+                        return@f true
+                    }
                 }
             }
             false
@@ -133,7 +136,29 @@ class WebtoonViewer(val activity: ReaderActivity) : BaseViewer {
      * activity of the change and requests the preload of the next chapter if this is the last page.
      */
     private fun onPageSelected(page: ReaderPage, position: Int) {
-        val pages = page.chapter.pages!! // Won't be null because it's the loaded chapter
+        val pages = page.chapter.pages // Won't be null because it's the loaded chapter
+        // EXH -->
+        if(pages == null) {
+            XLog.e("Webtoon reader chapter pages are null (position: %s," +
+                    " page.index: %s," +
+                    " page.url: %s," +
+                    " page.imageUrl: %s," +
+                    " page.chapter.state: %s," +
+                    " page.chapter.pageLoader == null: %s," +
+                    " page.chapter.requestedPage: %s" +
+                    " page.chapter.references: %s)!",
+                    position,
+                    page.index,
+                    page.url,
+                    page.imageUrl,
+                    page.chapter.state::class.simpleName,
+                    page.chapter.pageLoader == null,
+                    page.chapter.requestedPage,
+                    page.chapter.references)
+            return
+        }
+        // EXH <--
+
         Timber.d("onPageSelected: ${page.number}/${pages.size}")
         activity.onPageSelected(page)
 
@@ -200,7 +225,7 @@ class WebtoonViewer(val activity: ReaderActivity) : BaseViewer {
     /**
      * Scrolls down by [scrollDistance].
      */
-    private fun scrollDown() {
+    /* [EXH] private */ fun scrollDown() {
         recycler.smoothScrollBy(0, scrollDistance)
     }
 

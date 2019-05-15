@@ -1,5 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="v8.4.1-EH" changeDate="">
+        <changelogtext>Fix app crashing when updating library</changelogtext>
+        <changelogtext>Fix E-Hentai/ExHentai and many other sources not working</changelogtext>
+        <changelogtext>Fix many crashes that occur when the app is run on older Android versions</changelogtext>
+        <changelogtext>Fix autoscroll crashing the reader sometimes</changelogtext>
+        <changelogtext>Fix the app crashing on startup for some users</changelogtext>
+        <changelogtext>Fix multi-select operations crashing the app when the selection is too large</changelogtext>
+        <changelogtext>Add throttling when restoring E-Hentai/ExHentai galleries from backups</changelogtext>
+    </changelogversion>
+
+    <changelogversion versionName="v8.4.0-EH" changeDate="">
+        <changelogtext>Many crash fixes</changelogtext>
+        <changelogtext>Sort saved searches alphabetically</changelogtext>
+        <changelogtext>Fix favorites sync not properly syncing EHentai (not ExHentai) galleries</changelogtext>
+        <changelogtext>Fix images being saved to wrong folder (thanks Scrxtchy!)</changelogtext>
+        <changelogtext>Many optimizations to library search (it should no longer freeze the app)</changelogtext>
+        <changelogtext>Add ability to remove transition page between chapters</changelogtext>
+        <changelogtext>Fix hitomi.la</changelogtext>
+        <changelogtext>Fix handling of old backups containing hentai.cafe or nhentai galleries</changelogtext>
+        <changelogtext>Add support for importing backups containing galleries from sources in Tachiyomi extensions</changelogtext>
+        <changelogtext>Hide extensions/sources that conflict with TachiyomiEH</changelogtext>
+        <changelogtext>Fix backup/favorites sync randomly hanging</changelogtext>
+        <changelogtext>Fix gallery import/favorites sync not adding search metadata</changelogtext>
+        <changelogtext>Allow saving searches in sources with no filters</changelogtext>
+        <changelogtext>Fix favorites sync failing on removed galleries</changelogtext>
+        <changelogtext>Favorites sync will now scan invalid galleries before starting</changelogtext>
+        <changelogtext>Allow searching by title in the library for galleries with missing metadata</changelogtext>
+        <changelogtext>Fix EHentai/ExHentai rating search</changelogtext>
+        <changelogtext>Add ability to aggressively load pages</changelogtext>
+        <changelogtext>Add MangaDex login</changelogtext>
+        <changelogtext>Add option to toggle between low/high quality hitomi.la thumbnails</changelogtext>
+        <changelogtext>TachiyomiEH will now automatically detect captchas in all sources</changelogtext>
+        <changelogtext>Add ability to auto-check EHentai/ExHentai galleries for updates</changelogtext>
+        <changelogtext>Add support for EHentai/ExHentai gallery versioning</changelogtext>
+        <changelogtext>Fix preserve reading position on read manga</changelogtext>
+        <changelogtext>Retrying an EHentai/ExHentai page will now grab a different Hentai@Home URL</changelogtext>
+    </changelogversion>
+
+    <changelogversion versionName="v0.8.4" changeDate="">
+        <changelogtext>All the internal sources have been removed. They now need to be
+            installed as an extension.</changelogtext>
+        <changelogtext>Cloudflare is now resolved with a WebView in background which should put
+            an end to the recent updates to adapt to their changes.</changelogtext>
+        <changelogtext>Added an option to open manga details in a WebView. This
+            should also help when receiving a captcha confirmation page (usually 403 errors).
+            It can also be used to login with the website, as the app now shares cookies.</changelogtext>
+        <changelogtext>Added a deep link handler that extensions can use to perform
+            a search within the app.</changelogtext>
+        <changelogtext>Added an option to decode images in ARGB8888 format for
+            devices running Oreo or later.</changelogtext>
+        <changelogtext>Added Shikimori tracker.</changelogtext>
+        <changelogtext>Updated translations.</changelogtext>
+    </changelogversion>
+
+    <changelogversion versionName="v8.2.0-EH" changeDate="">
+        <changelogtext>Rewrite library tag searching (for hopefully better performance)</changelogtext>
+        <changelogtext>Fix EHentai/ExHentai</changelogtext>
+        <changelogtext>Fix hitomi.la</changelogtext>
+        <changelogtext>Rewrite hitomi.la search engine to be much, much faster</changelogtext>
+        <changelogtext>Fix some random crashes</changelogtext>
+        <changelogtext>Fix nhentai</changelogtext>
+        <changelogtext>Add additional filters to nhentai</changelogtext>
+        <changelogtext>Fix PervEden</changelogtext>
+        <changelogtext>Introduce delegated sources</changelogtext>
+        <changelogtext>Integrate HentaiCafe with the Tachiyomi extension</changelogtext>
+        <changelogtext>Introduce ability to save/load search presets</changelogtext>
+        <changelogtext>Fix tap-to-search-tag breaking on aliased tags</changelogtext>
+        <changelogtext>Add experimental automatic Tsumino captcha solver</changelogtext>
+        <changelogtext>Add ability to interrupt metadata migrator</changelogtext>
+        <changelogtext>Fix incognito open-in-browser being zoomed in incorrectly sometimes</changelogtext>
+    </changelogversion>
+
     <changelogversion versionName="v0.8.2" changeDate="">
         <changelogtext>Updated Cloudflare.</changelogtext>
         <changelogtext>Fixed crashes with some translations.</changelogtext>
@@ -27,6 +99,35 @@
         <changelogtext>Other minor bugfixes.</changelogtext>
     </changelogversion>
 
+    <changelogversion versionName="v7.4.4-EH" changeDate="">
+        <changelogtext>Add ability to customize reader cache size</changelogtext>
+        <changelogtext>Fix "Retry all" button not retrying all pages</changelogtext>
+        <changelogtext>Add GIF support (not available in webtoon reader)</changelogtext>
+        <changelogtext>Add ability to force saving reading position even when manga is read</changelogtext>
+        <changelogtext>Add option to prevent pages opened using the 'Open in browser' menu option from being added to Chrome's history</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="v7.4.3-EH" changeDate="">
+        <changelogtext>Version skipped due to internal changes</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="v7.4.2-EH" changeDate="">
+        <changelogtext>Performance improvements for users with E-Hentai hath perks</changelogtext>
+        <changelogtext>Add additional advanced options to E-Hentai login screen</changelogtext>
+        <changelogtext>Add "more" button in global search results</changelogtext>
+        <changelogtext>Fix hitomi.la browse/latest not working</changelogtext>
+        <changelogtext>Minor performance improvements to hitomi.la search</changelogtext>
+        <changelogtext>Add ability to reverse search results on E-Hentai/ExHentai</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="v7.4.1-EH" changeDate="">
+        <changelogtext>Fixed autoscroll scrolling wrong direction on right-to-left readers</changelogtext>
+        <changelogtext>Added retry all button</changelogtext>
+        <changelogtext>Added boost page button</changelogtext>
+        <changelogtext>Fixed incorrect version numbers in changelog</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="v7.4.0-EH" changeDate="">
+        <changelogtext>Added autoscroll feature</changelogtext>
+        <changelogtext>Added ability to specify reader download thread count</changelogtext>
+        <changelogtext>Added ability to skip download queue upon retry</changelogtext>
+    </changelogversion>
     <changelogversion versionName="v0.7.4" changeDate="">
         <changelogtext>Updated Anilist's API to v2.</changelogtext>
         <changelogtext>Added Github link to about.</changelogtext>
@@ -44,6 +145,44 @@
         <changelogtext>Fixed a few weird crashes.</changelogtext>
     </changelogversion>
 
+    <changelogversion versionName="v7.2.3-EH" changeDate="">
+        <changelogtext>Fix app crashing on some older devices (again)</changelogtext>
+        <changelogtext>Fix app crashing sometimes when long-pressing the back/menu button in the top left</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="v7.2.2-EH" changeDate="">
+        <changelogtext>Fix app crashing on some older devices</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="v7.2.0-EH" changeDate="">
+        <changelogtext>Fix Tsumino search page offset</changelogtext>
+        <changelogtext>Added hitomi.la source (searching is still very slow/buggy)</changelogtext>
+        <changelogtext>Add option to expand search filter by default</changelogtext>
+        <changelogtext>Add an option to disable auto lock and add manual locking</changelogtext>
+        <changelogtext>Re-theme lock view (again)</changelogtext>
+        <changelogtext>Fix broken back button in search</changelogtext>
+        <changelogtext>Fix Tsumino captcha appearing multiple times</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="v7.0.0-EH" changeDate="">
+        <changelogtext>More fixes to favorites sync</changelogtext>
+        <changelogtext>Added options to ignore errors in favorites sync</changelogtext>
+        <changelogtext>Add Tsumino captcha display</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="v6.8.2-EH" changeDate="">
+        <changelogtext>Fix broken favorites sync in previous release</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="v6.8.1-EH" changeDate="">
+        <changelogtext>Various performance improvements</changelogtext>
+        <changelogtext>Fix app not working at all for some users</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="v6.8.0-EH" changeDate="">
+        <changelogtext>Various performance improvements</changelogtext>
+        <changelogtext>Fix library search query being lost</changelogtext>
+        <changelogtext>Upstream merge</changelogtext>
+        <changelogtext>Fix Tsumino and HentaiCafe links not triggering a link import</changelogtext>
+        <changelogtext>Fix many bugs in link interceptor</changelogtext>
+        <changelogtext>Completely revamp favorites sync algorithm</changelogtext>
+        <changelogtext>Various bug fixes</changelogtext>
+
+    </changelogversion>
     <changelogversion versionName="v0.7.2" changeDate="">
         <changelogtext>Fixed missing downloaded label in chapters screen.</changelogtext>
         <changelogtext>Fixed updater in KitKat and lower due to TLS.</changelogtext>
@@ -66,108 +205,6 @@
         <changelogtext>Batoto is now a legacy source, you can only use it to migrate.</changelogtext>
         <changelogtext>Updated dark theme and reader theme.</changelogtext>
         <changelogtext>Bugfixes and minor UI/UX improvements.</changelogtext>
-    </changelogversion>
-
-    <changelogversion versionName="v0.6.8" changeDate="">
-        <changelogtext>Added a new feature to help migrating manga from sources. You can find it in the library's toolbar.
-            In the search results, a tap will prompt to replace (or copy) the selected manga, while a long tap will let you
-            browse the manga before doing the migration.
-        </changelogtext>
-
-    </changelogversion>
-
-    <changelogversion versionName="v0.6.7" changeDate="">
-        <changelogtext>[b]Notice to Batoto users.[/b] As you may already know, Batoto will cease to work in a few days.
-            We're working on a feature to help migrating the library to other sources and should be available shortly.
-            Please be patient.</changelogtext>
-        <changelogtext>Fixed http 503 errors due to Cloudflare changes.</changelogtext>
-        <changelogtext>Minor UI improvements.</changelogtext>
-
-    </changelogversion>
-
-    <changelogversion versionName="v0.6.6" changeDate="">
-        <changelogtext>Backups now properly restore tracking information.</changelogtext>
-        <changelogtext>Fixed library view and its overflow menu visible in other screens.</changelogtext>
-        <changelogtext>Fixed updater's notification in Android O.</changelogtext>
-        <changelogtext>Fixed a crash when rotating the screen in the chapters view.</changelogtext>
-        <changelogtext>Improved peformance of the app when using a custom downloads directory.</changelogtext>
-    </changelogversion>
-
-    <changelogversion versionName="v0.6.5" changeDate="">
-        <changelogtext>Added a download cache for faster navigation.</changelogtext>
-        <changelogtext>Enabled Cloudflare for Batoto.</changelogtext>
-        <changelogtext>Fixed some issues with automatic backups.</changelogtext>
-        <changelogtext>Fixed a bootloop issue with devices running Cyanogenmod 12 or 13.</changelogtext>
-    </changelogversion>
-
-    <changelogversion versionName="v0.6.4" changeDate="">
-        <changelogtext>Added a global search feature with a new catalogue screen.</changelogtext>
-        <changelogtext>Added an option to show downloaded chapters badges in the library.</changelogtext>
-        <changelogtext>Added an scrollbar in the chapter list.</changelogtext>
-        <changelogtext>Fixed some issues with bundled catalogues.</changelogtext>
-        <changelogtext>Changed the page indicator in the reader to support devices with rounded corners.</changelogtext>
-        <changelogtext>Crash fixes.</changelogtext>
-    </changelogversion>
-
-    <changelogversion versionName="v0.6.3" changeDate="">
-        <changelogtext>Fixed a crash when retrying a page.</changelogtext>
-        <changelogtext>Fixed a crash when sharing an image.</changelogtext>
-        <changelogtext>Fixed disappearing toolbar buttons in the catalog after a search.</changelogtext>
-    </changelogversion>
-
-    <changelogversion versionName="v0.6.2" changeDate="">
-        <changelogtext>Added a new completed manga filter for the library.</changelogtext>
-        <changelogtext>Added scanlator to chapters (if supported by source).</changelogtext>
-        <changelogtext>Added Discord server link.</changelogtext>
-        <changelogtext>Added new translations.</changelogtext>
-        <changelogtext>Extensions shouldn't crash the app anymore.</changelogtext>
-        <changelogtext>Crop borders is supported in webtoon reader and fixed in Android O.</changelogtext>
-        <changelogtext>Fixed a bug where storage permissions were always requested.</changelogtext>
-        <changelogtext>Minor UI and crash fixes.</changelogtext>
-    </changelogversion>
-
-    <changelogversion versionName="v0.6.1" changeDate="">
-        <changelogtext>Bugfix release.</changelogtext>
-    </changelogversion>
-
-    <changelogversion versionName="v0.6.0" changeDate="">
-        <changelogtext>Added sorting by total chapters.</changelogtext>
-        <changelogtext>Added an option to reverse volume keys navigation.</changelogtext>
-        <changelogtext>Added AMOLED theme.</changelogtext>
-        <changelogtext>Improved recent chapters view.</changelogtext>
-        <changelogtext>Improved UI with a single activity approach.</changelogtext>
-        <changelogtext>Fixed backup restore issues.</changelogtext>
-        <changelogtext>Fixed Kitsu http 400 errors.</changelogtext>
-        <changelogtext>Fixed Batoto catalogue.</changelogtext>
-    </changelogversion>
-
-    <changelogversion versionName="v0.5.2" changeDate="">
-        <changelogtext>New backup system. Smaller file size but requires a network connection to restore.</changelogtext>
-        <changelogtext>Fixed descriptions showing a single line.</changelogtext>
-        <changelogtext>Added Nougat shortcuts and round icon.</changelogtext>
-        <changelogtext>Added an option to add a manga to a specific category.</changelogtext>
-        <changelogtext>Improved new chapters notification.</changelogtext>
-        <changelogtext>Support Kitsu new rating system.</changelogtext>
-        <changelogtext>Last read page is now retained in webtoon reader.</changelogtext>
-
-    </changelogversion>
-
-    <changelogversion versionName="v0.5.1" changeDate="">
-        <changelogtext>Added an option to auto download from selected categories.</changelogtext>
-        <changelogtext>Handle a few more directories for local manga.</changelogtext>
-        <changelogtext>Update Kissmanga parser.</changelogtext>
-        <changelogtext>Fixed downloader errors with some manga titles.</changelogtext>
-        <changelogtext>Fixed gallery not showing saved images.</changelogtext>
-    </changelogversion>
-
-    <changelogversion versionName="v0.5.0" changeDate="">
-        <changelogtext>Support for local manga. Head to the [a href="https://github.com/inorichi/tachiyomi/wiki/Local-manga"]wiki page[/a] for instructions.</changelogtext>
-        <changelogtext>Added an option to detect and remove the white borders of the images.</changelogtext>
-        <changelogtext>Added advanced search for catalogues.</changelogtext>
-        <changelogtext>Russian, french, bulgarian and vietnamese translations.</changelogtext>
-        <changelogtext>Fixed a bug when changing chapters inside the reader with the buttons.</changelogtext>
-        <changelogtext>Fixed certain downloaded chapters not working with any decoder.</changelogtext>
-        <changelogtext>Fixed lost covers on some devices.</changelogtext>
     </changelogversion>
 
 </changelog>

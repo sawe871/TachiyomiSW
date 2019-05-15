@@ -12,6 +12,7 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.view.ActionMode
 import android.support.v7.widget.SearchView
 import android.view.*
+import com.afollestad.materialdialogs.MaterialDialog
 import com.bluelinelabs.conductor.ControllerChangeHandler
 import com.bluelinelabs.conductor.ControllerChangeType
 import com.f2prateek.rx.preferences.Preference
@@ -35,13 +36,18 @@ import eu.kanade.tachiyomi.ui.manga.MangaController
 import eu.kanade.tachiyomi.ui.migration.MigrationController
 import eu.kanade.tachiyomi.util.inflate
 import eu.kanade.tachiyomi.util.toast
+import exh.favorites.FavoritesIntroDialog
+import exh.favorites.FavoritesSyncStatus
+import exh.ui.LoaderManager
 import kotlinx.android.synthetic.main.library_controller.*
 import kotlinx.android.synthetic.main.main_activity.*
 import rx.Subscription
+import rx.android.schedulers.AndroidSchedulers
 import timber.log.Timber
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 
 class LibraryController(
@@ -119,6 +125,16 @@ class LibraryController(
 
     private var searchViewSubscription: Subscription? = null
 
+    // --> EH
+    //Sync dialog
+    private var favSyncDialog: MaterialDialog? = null
+    //Old sync status
+    private var oldSyncStatus: FavoritesSyncStatus? = null
+    //Favorites
+    private var favoritesSyncSubscription: Subscription? = null
+    val loaderManager = LoaderManager()
+    // <-- EH
+
     init {
         setHasOptionsMenu(true)
         retainViewMode = RetainViewMode.RETAIN_DETACH
@@ -155,6 +171,12 @@ class LibraryController(
         if (selectedMangas.isNotEmpty()) {
             createActionModeIfNeeded()
         }
+
+        // EXH -->
+        loaderManager.loadingChangeListener = {
+            library_progress.visibility = if(it) View.VISIBLE else View.GONE
+        }
+        // EXH <--
     }
 
     override fun onChangeStarted(handler: ControllerChangeHandler, type: ControllerChangeType) {
@@ -171,6 +193,9 @@ class LibraryController(
         actionMode = null
         tabsVisibilitySubscription?.unsubscribe()
         tabsVisibilitySubscription = null
+        // EXH -->
+        loaderManager.loadingChangeListener = null
+        // EXH <--
         super.onDestroyView(view)
     }
 
@@ -364,6 +389,14 @@ class LibraryController(
             R.id.action_source_migration -> {
                 router.pushController(MigrationController().withFadeTransaction())
             }
+            // --> EXH
+            R.id.action_sync_favorites -> {
+                if(preferences.eh_showSyncIntro().getOrDefault())
+                    activity?.let { FavoritesIntroDialog().show(it) }
+                else
+                    presenter.favoritesSync.runSync()
+            }
+            // <-- EXH
             else -> return super.onOptionsItemSelected(item)
         }
 
@@ -488,6 +521,132 @@ class LibraryController(
             activity?.toast(R.string.notification_first_add_to_library)
         }
     }
+
+    override fun onAttach(view: View) {
+        super.onAttach(view)
+
+        // --> EXH
+        cleanupSyncState()
+        favoritesSyncSubscription =
+                presenter.favoritesSync.status
+                        .sample(100, TimeUnit.MILLISECONDS)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe {
+                    updateSyncStatus(it)
+        }
+        // <-- EXH
+    }
+
+    override fun onDetach(view: View) {
+        super.onDetach(view)
+
+        //EXH
+        cleanupSyncState()
+    }
+
+    // --> EXH
+    private fun cleanupSyncState() {
+        favoritesSyncSubscription?.unsubscribe()
+        favoritesSyncSubscription = null
+        //Close sync status
+        favSyncDialog?.dismiss()
+        favSyncDialog = null
+        oldSyncStatus = null
+        //Clear flags
+        releaseSyncLocks()
+    }
+
+    private fun buildDialog() = activity?.let {
+        MaterialDialog.Builder(it)
+    }
+
+    private fun showSyncProgressDialog() {
+        favSyncDialog?.dismiss()
+        favSyncDialog = buildDialog()
+                ?.title("Favorites syncing")
+                ?.cancelable(false)
+                ?.progress(true, 0)
+                ?.show()
+    }
+
+    private fun takeSyncLocks() {
+        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+
+    private fun releaseSyncLocks() {
+        activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+
+    private fun updateSyncStatus(status: FavoritesSyncStatus) {
+        when(status) {
+            is FavoritesSyncStatus.Idle -> {
+                releaseSyncLocks()
+
+                favSyncDialog?.dismiss()
+                favSyncDialog = null
+            }
+            is FavoritesSyncStatus.BadLibraryState.MangaInMultipleCategories -> {
+                releaseSyncLocks()
+
+                favSyncDialog?.dismiss()
+                favSyncDialog = buildDialog()
+                        ?.title("Favorites sync error")
+                        ?.content(status.message + " Sync will not start until the gallery is in only one category.")
+                        ?.cancelable(false)
+                        ?.positiveText("Show gallery")
+                        ?.onPositive { _, _ ->
+                            openManga(status.manga)
+                            presenter.favoritesSync.status.onNext(FavoritesSyncStatus.Idle())
+                        }
+                        ?.negativeText("Ok")
+                        ?.onNegative { _, _ ->
+                            presenter.favoritesSync.status.onNext(FavoritesSyncStatus.Idle())
+                        }
+                        ?.show()
+            }
+            is FavoritesSyncStatus.Error -> {
+                releaseSyncLocks()
+
+                favSyncDialog?.dismiss()
+                favSyncDialog = buildDialog()
+                        ?.title("Favorites sync error")
+                        ?.content("An error occurred during the sync process: ${status.message}")
+                        ?.cancelable(false)
+                        ?.positiveText("Ok")
+                        ?.onPositive { _, _ ->
+                            presenter.favoritesSync.status.onNext(FavoritesSyncStatus.Idle())
+                        }
+                        ?.show()
+            }
+            is FavoritesSyncStatus.CompleteWithErrors -> {
+                releaseSyncLocks()
+
+                favSyncDialog?.dismiss()
+                favSyncDialog = buildDialog()
+                        ?.title("Favorites sync complete with errors")
+                        ?.content("Errors occurred during the sync process that were ignored:\n${status.message}")
+                        ?.cancelable(false)
+                        ?.positiveText("Ok")
+                        ?.onPositive { _, _ ->
+                            presenter.favoritesSync.status.onNext(FavoritesSyncStatus.Idle())
+                        }
+                        ?.show()
+            }
+            is FavoritesSyncStatus.Processing,
+            is FavoritesSyncStatus.Initializing -> {
+                takeSyncLocks()
+
+                if(favSyncDialog == null || (oldSyncStatus != null
+                        && oldSyncStatus !is FavoritesSyncStatus.Initializing
+                        && oldSyncStatus !is FavoritesSyncStatus.Processing))
+                    showSyncProgressDialog()
+
+                favSyncDialog?.setContent(status.message)
+            }
+        }
+        oldSyncStatus = status
+    }
+    // <-- EXH
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == REQUEST_IMAGE_OPEN) {

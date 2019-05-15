@@ -125,4 +125,77 @@ object PreferenceKeys {
 
     fun trackToken(syncId: Int) = "track_token_$syncId"
 
+    const val eh_lock_hash = "lock_hash"
+
+    const val eh_lock_salt = "lock_salt"
+
+    const val eh_lock_length = "lock_length"
+
+    const val eh_lock_finger = "lock_finger"
+
+    const val eh_lock_manually = "eh_lock_manually"
+
+    const val eh_nh_useHighQualityThumbs = "eh_nh_hq_thumbs"
+
+    const val eh_showSyncIntro = "eh_show_sync_intro"
+
+    const val eh_readOnlySync = "eh_sync_read_only"
+
+    const val eh_lenientSync = "eh_lenient_sync"
+
+    const val eh_useOrigImages = "eh_useOrigImages"
+
+    const val eh_ehSettingsProfile = "eh_ehSettingsProfile"
+
+    const val eh_exhSettingsProfile = "eh_exhSettingsProfile"
+
+    const val eh_settingsKey = "eh_settingsKey"
+
+    const val eh_sessionCookie = "eh_sessionCookie"
+
+    const val eh_hathPerksCookie = "eh_hathPerksCookie"
+
+    const val eh_enableExHentai = "enable_exhentai"
+
+    const val eh_ts_aspNetCookie = "eh_ts_aspNetCookie"
+
+    const val eh_showSettingsUploadWarning = "eh_showSettingsUploadWarning2"
+
+    const val eh_expandFilters = "eh_expand_filters"
+
+    const val eh_askCategoryOnLongPress = "eh_ask_category_on_long_press"
+
+    const val eh_readerThreads = "eh_reader_threads"
+
+    const val eh_readerInstantRetry = "eh_reader_instant_retry"
+
+    const val eh_utilAutoscrollInterval = "eh_util_autoscroll_interval"
+
+    const val eh_cacheSize = "eh_cache_size"
+
+    const val eh_preserveReadingPosition = "eh_preserve_reading_position"
+
+    const val eh_incogWebview = "eh_incognito_webview"
+
+    const val eh_autoSolveCaptchas = "eh_autosolve_captchas"
+
+    const val eh_delegateSources = "eh_delegate_sources"
+
+    const val eh_showTransitionPages = "eh_show_transition_pages"
+
+    const val eh_logLevel = "eh_log_level"
+
+    const val eh_enableSourceBlacklist = "eh_enable_source_blacklist"
+
+    const val eh_autoUpdateFrequency = "eh_auto_update_frequency"
+
+    const val eh_autoUpdateRestrictions = "eh_auto_update_restrictions"
+
+    const val eh_autoUpdateStats = "eh_auto_update_stats"
+
+    const val eh_aggressivePageLoading = "eh_aggressive_page_loading"
+
+    const val eh_hl_useHighQualityThumbs = "eh_hl_hq_thumbs"
+
+    const val eh_forceSortEhVersionsAsc = "eh_force_sort_eh_versions_asc"
 }

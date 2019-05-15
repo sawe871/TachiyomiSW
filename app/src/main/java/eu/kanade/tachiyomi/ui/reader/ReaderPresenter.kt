@@ -70,12 +70,16 @@ class ReaderPresenter(
     /**
      * Relay for currently active viewer chapters.
      */
-    private val viewerChaptersRelay = BehaviorRelay.create<ViewerChapters>()
+    /* [EXH] private */ val viewerChaptersRelay = BehaviorRelay.create<ViewerChapters>()
 
     /**
      * Relay used when loading prev/next chapter needed to lock the UI (with a dialog).
      */
     private val isLoadingAdjacentChapterRelay = BehaviorRelay.create<Boolean>()
+
+    // EXH -->
+    private var loadKey: String? = null
+    // EXH <--
 
     /**
      * Chapter list for the active manga. It's retrieved lazily and should be accessed for the first
@@ -224,7 +228,8 @@ class ReaderPresenter(
      */
     private fun getLoadObservable(
             loader: ChapterLoader,
-            chapter: ReaderChapter
+            chapter: ReaderChapter,
+            requiredLoadKey: String? = null
     ): Observable<ViewerChapters> {
         return loader.loadChapter(chapter)
                 .andThen(Observable.fromCallable {
@@ -236,14 +241,21 @@ class ReaderPresenter(
                 })
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { newChapters ->
+                    // Add new references first to avoid unnecessary recycling
+                newChapters.ref()
+
+                // Ensure that we haven't made another load request in the meantime
+                if(requiredLoadKey == null || requiredLoadKey == loadKey) {
                     val oldChapters = viewerChaptersRelay.value
 
-                    // Add new references first to avoid unnecessary recycling
-                    newChapters.ref()
                     oldChapters?.unref()
 
                     viewerChaptersRelay.call(newChapters)
+                } else {
+                    // Another load request has been made, our new chapters are useless :(
+                    newChapters.unref()
                 }
+            }
     }
 
     /**
@@ -255,8 +267,11 @@ class ReaderPresenter(
 
         Timber.d("Loading ${chapter.chapter.url}")
 
+        val newLoadKey = UUID.randomUUID().toString()
+        loadKey = newLoadKey
+
         activeChapterSubscription?.unsubscribe()
-        activeChapterSubscription = getLoadObservable(loader, chapter)
+        activeChapterSubscription = getLoadObservable(loader, chapter, newLoadKey)
                 .toCompletable()
                 .onErrorComplete()
                 .subscribe()
@@ -460,7 +475,7 @@ class ReaderPresenter(
         // Pictures directory.
         val destDir = File(Environment.getExternalStorageDirectory().absolutePath +
                 File.separator + Environment.DIRECTORY_PICTURES +
-                File.separator + "Tachiyomi")
+                File.separator + context.getString(R.string.app_name))
 
         // Copy file in background.
         Observable.fromCallable { saveImage(page, destDir, manga) }

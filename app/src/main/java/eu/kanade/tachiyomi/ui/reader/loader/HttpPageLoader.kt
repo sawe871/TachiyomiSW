@@ -1,11 +1,16 @@
 package eu.kanade.tachiyomi.ui.reader.loader
 
+import com.elvishew.xlog.XLog
 import eu.kanade.tachiyomi.data.cache.ChapterCache
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import eu.kanade.tachiyomi.data.preference.getOrDefault
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
 import eu.kanade.tachiyomi.util.plusAssign
+import exh.EH_SOURCE_ID
+import exh.EXH_SOURCE_ID
 import rx.Completable
 import rx.Observable
 import rx.schedulers.Schedulers
@@ -15,6 +20,7 @@ import rx.subscriptions.CompositeSubscription
 import timber.log.Timber
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import uy.kohesive.injekt.injectLazy
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -26,6 +32,9 @@ class HttpPageLoader(
         private val source: HttpSource,
         private val chapterCache: ChapterCache = Injekt.get()
 ) : PageLoader() {
+    // EXH -->
+    private val prefs: PreferencesHelper by injectLazy()
+    // EXH <--
 
     /**
      * A queue used to manage requests one by one while allowing priorities.
@@ -38,17 +47,27 @@ class HttpPageLoader(
     private val subscriptions = CompositeSubscription()
 
     init {
-        subscriptions += Observable.defer { Observable.just(queue.take().page) }
-            .filter { it.status == Page.QUEUE }
-            .concatMap { source.fetchImageFromCacheThenNet(it) }
-            .repeat()
-            .subscribeOn(Schedulers.io())
-            .subscribe({
-            }, { error ->
-                if (error !is InterruptedException) {
-                    Timber.e(error)
-                }
-            })
+        // EXH -->
+        repeat(prefs.eh_readerThreads().getOrDefault()) {
+            // EXH <--
+            subscriptions += Observable.defer { Observable.just(queue.take().page) }
+                    .filter { it.status == Page.QUEUE }
+                    .concatMap {
+                        source.fetchImageFromCacheThenNet(it).doOnNext {
+                            XLog.d("Downloaded page: ${it.number}!")
+                        }
+                    }
+                    .repeat()
+                    .subscribeOn(Schedulers.io())
+                    .subscribe({
+                    }, { error ->
+                        if (error !is InterruptedException) {
+                            Timber.e(error)
+                        }
+                    })
+            // EXH -->
+        }
+        // EXH <--
     }
 
     /**
@@ -83,9 +102,17 @@ class HttpPageLoader(
             .getPageListFromCache(chapter.chapter)
             .onErrorResumeNext { source.fetchPageList(chapter.chapter) }
             .map { pages ->
-                pages.mapIndexed { index, page -> // Don't trust sources and use our own indexing
+                val rp = pages.mapIndexed { index, page -> // Don't trust sources and use our own indexing
                     ReaderPage(index, page.url, page.imageUrl)
                 }
+                if(prefs.eh_aggressivePageLoading().getOrDefault()) {
+                    rp.mapNotNull {
+                        if (it.status == Page.QUEUE) {
+                            PriorityPage(it, 0)
+                        } else null
+                    }.forEach { queue.offer(it) }
+                }
+                rp
             }
     }
 
@@ -142,6 +169,13 @@ class HttpPageLoader(
         if (page.status == Page.ERROR) {
             page.status = Page.QUEUE
         }
+        // EXH -->
+        // Grab a new image URL on EXH sources
+        if(source.id == EH_SOURCE_ID || source.id == EXH_SOURCE_ID)
+            page.imageUrl = null
+
+        if(prefs.eh_readerInstantRetry().getOrDefault()) boostPage(page)
+        else // EXH <--
         queue.offer(PriorityPage(page, 2))
     }
 
@@ -182,7 +216,20 @@ class HttpPageLoader(
         page.status = Page.LOAD_PAGE
         return fetchImageUrl(page)
             .doOnError { page.status = Page.ERROR }
-            .onErrorReturn { null }
+            .onErrorReturn {
+                // [EXH]
+                XLog.w("> Failed to fetch image URL!", it)
+                XLog.w("> (source.id: %s, source.name: %s, page.index: %s, page.url: %s, page.imageUrl: %s, chapter.id: %s, chapter.url: %s)",
+                        source.id,
+                        source.name,
+                        page.index,
+                        page.url,
+                        page.imageUrl,
+                        page.chapter.chapter.id,
+                        page.chapter.chapter.url)
+
+                null
+            }
             .doOnNext { page.imageUrl = it }
             .map { page }
     }
@@ -208,7 +255,20 @@ class HttpPageLoader(
                 page.stream = { chapterCache.getImageFile(imageUrl).inputStream() }
                 page.status = Page.READY
             }
-            .doOnError { page.status = Page.ERROR }
+            .doOnError {
+                // [EXH]
+                XLog.w("> Failed to fetch image!", it)
+                XLog.w("> (source.id: %s, source.name: %s, page.index: %s, page.url: %s, page.imageUrl: %s, chapter.id: %s, chapter.url: %s)",
+                        source.id,
+                        source.name,
+                        page.index,
+                        page.url,
+                        page.imageUrl,
+                        page.chapter.chapter.id,
+                        page.chapter.chapter.url)
+
+                page.status = Page.ERROR
+            }
             .onErrorReturn { page }
     }
 
@@ -223,4 +283,20 @@ class HttpPageLoader(
             .doOnNext { chapterCache.putImageToCache(page.imageUrl!!, it) }
             .map { page }
     }
+
+    // EXH -->
+    fun boostPage(page: ReaderPage) {
+        if(page.status == Page.QUEUE) {
+            subscriptions += Observable.just(page)
+                    .concatMap { source.fetchImageFromCacheThenNet(it) }
+                    .subscribeOn(Schedulers.io())
+                    .subscribe({
+                    }, { error ->
+                        if (error !is InterruptedException) {
+                            Timber.e(error)
+                        }
+                    })
+        }
+    }
+    // EXH <--
 }

@@ -1,6 +1,9 @@
 package eu.kanade.tachiyomi.ui.catalogue.browse
 
 import android.os.Bundle
+import com.github.salomonbrys.kotson.*
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import eu.davidea.flexibleadapter.items.IFlexible
 import eu.davidea.flexibleadapter.items.ISectionable
 import eu.kanade.tachiyomi.data.cache.CoverCache
@@ -9,6 +12,7 @@ import eu.kanade.tachiyomi.data.database.models.Category
 import eu.kanade.tachiyomi.data.database.models.Manga
 import eu.kanade.tachiyomi.data.database.models.MangaCategory
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import eu.kanade.tachiyomi.data.preference.getOrDefault
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.source.model.Filter
@@ -16,6 +20,7 @@ import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.ui.base.presenter.BasePresenter
 import eu.kanade.tachiyomi.ui.catalogue.filter.*
+import exh.EXHSavedSearch
 import rx.Observable
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
@@ -24,12 +29,16 @@ import rx.subjects.PublishSubject
 import timber.log.Timber
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import uy.kohesive.injekt.injectLazy
+import xyz.nulldev.ts.api.http.serializer.FilterSerializer
+import java.lang.RuntimeException
 
 /**
  * Presenter of [BrowseCatalogueController].
  */
 open class BrowseCataloguePresenter(
         sourceId: Long,
+        searchQuery: String? = null,
         sourceManager: SourceManager = Injekt.get(),
         private val db: DatabaseHelper = Injekt.get(),
         private val prefs: PreferencesHelper = Injekt.get(),
@@ -44,7 +53,7 @@ open class BrowseCataloguePresenter(
     /**
      * Query from the view.
      */
-    var query = ""
+    var query = searchQuery ?: ""
         private set
 
     /**
@@ -373,4 +382,42 @@ open class BrowseCataloguePresenter(
         }
     }
 
+    // EXH -->
+    private val jsonParser = JsonParser()
+    private val filterSerializer = FilterSerializer()
+    fun saveSearches(searches: List<EXHSavedSearch>) {
+        val otherSerialized = prefs.eh_savedSearches().getOrDefault().filter {
+            !it.startsWith("${source.id}:")
+        }
+        val newSerialized = searches.map {
+            "${source.id}:" + jsonObject(
+                    "name" to it.name,
+                    "query" to it.query,
+                    "filters" to filterSerializer.serialize(it.filterList)
+            ).toString()
+        }
+        prefs.eh_savedSearches().set((otherSerialized + newSerialized).toSet())
+    }
+
+    fun loadSearches(): List<EXHSavedSearch> {
+        val loaded = prefs.eh_savedSearches().getOrDefault()
+        return loaded.map {
+            try {
+                val id = it.substringBefore(':').toLong()
+                if(id != source.id) return@map null
+                val content = jsonParser.parse(it.substringAfter(':')).obj
+                val originalFilters = source.getFilterList()
+                filterSerializer.deserialize(originalFilters, content["filters"].array)
+                EXHSavedSearch(content["name"].string,
+                        content["query"].string,
+                        originalFilters)
+            } catch(t: RuntimeException) {
+                // Load failed
+                Timber.e(t, "Failed to load saved search!")
+                t.printStackTrace()
+                null
+            }
+        }.filterNotNull()
+    }
+    // EXH <--
 }

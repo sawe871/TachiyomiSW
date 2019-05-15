@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.IBinder
 import android.os.PowerManager
+import com.elvishew.xlog.XLog
 import com.github.salomonbrys.kotson.fromJson
 import com.google.gson.JsonArray
 import com.google.gson.JsonParser
@@ -26,10 +27,15 @@ import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.util.chop
 import eu.kanade.tachiyomi.util.isServiceRunning
 import eu.kanade.tachiyomi.util.sendLocalBroadcast
+import exh.BackupEntry
+import exh.EH_SOURCE_ID
+import exh.EXHMigrations
+import exh.EXH_SOURCE_ID
+import exh.eh.EHentaiThrottleManager
+import exh.eh.EHentaiUpdateWorker
 import rx.Observable
 import rx.Subscription
 import rx.schedulers.Schedulers
-import timber.log.Timber
 import uy.kohesive.injekt.injectLazy
 import java.io.File
 import java.text.SimpleDateFormat
@@ -122,6 +128,8 @@ class BackupRestoreService : Service() {
 
     private lateinit var executor: ExecutorService
 
+    private val throttleManager = EHentaiThrottleManager()
+
     /**
      * Method called when the service is created. It injects dependencies and acquire the wake lock.
      */
@@ -164,13 +172,23 @@ class BackupRestoreService : Service() {
 
         val uri = intent.getParcelableExtra<Uri>(BackupConst.EXTRA_URI)
 
+        throttleManager.resetThrottle()
+
         // Unsubscribe from any previous subscription if needed.
         subscription?.unsubscribe()
 
         subscription = Observable.using(
-                { db.lowLevel().beginTransaction() },
+                {
+                    // Pause auto-gallery-update during restore
+                    EHentaiUpdateWorker.cancelBackground(this)
+                    db.lowLevel().beginTransaction()
+                },
                 { getRestoreObservable(uri).doOnNext { db.lowLevel().setTransactionSuccessful() } },
-                { executor.execute { db.lowLevel().endTransaction() } })
+                {
+                    // Resume auto-gallery-update
+                    EHentaiUpdateWorker.scheduleBackground(this)
+                    executor.execute { db.lowLevel().endTransaction() }
+                })
                 .doAfterTerminate { stopSelf(startId) }
                 .subscribeOn(Schedulers.from(executor))
                 .subscribe()
@@ -222,7 +240,21 @@ class BackupRestoreService : Service() {
                     val history = backupManager.parser.fromJson<List<DHistory>>(obj.get(HISTORY) ?: JsonArray())
                     val tracks = backupManager.parser.fromJson<List<TrackImpl>>(obj.get(TRACK) ?: JsonArray())
 
-                    val observable = getMangaRestoreObservable(manga, chapters, categories, history, tracks)
+                    // EXH -->
+                    val migrated = EXHMigrations.migrateBackupEntry(
+                            BackupEntry(
+                                    manga,
+                                    chapters,
+                                    categories,
+                                    history,
+                                    tracks
+                            )
+                    )
+
+                    val observable = migrated.flatMap { (manga, chapters, categories, history, tracks) ->
+                        getMangaRestoreObservable(manga, chapters, categories, history, tracks)
+                    }
+                    // EXH <--
                     if (observable != null) {
                         observable
                     } else {
@@ -249,7 +281,10 @@ class BackupRestoreService : Service() {
 
                 }
                 .doOnError { error ->
-                    Timber.e(error)
+                    // [EXH]
+                    XLog.w("> Failed to perform restore!", error)
+                    XLog.w("> (uri: %s)", uri)
+
                     writeErrorLog()
                     val errorIntent = Intent(BackupConst.INTENT_FILTER).apply {
                         putExtra(BackupConst.ACTION, BackupConst.ACTION_ERROR_RESTORE_DIALOG)
@@ -320,8 +355,19 @@ class BackupRestoreService : Service() {
     private fun mangaFetchObservable(source: Source, manga: Manga, chapters: List<Chapter>,
                                      categories: List<String>, history: List<DHistory>,
                                      tracks: List<Track>): Observable<Manga> {
+        if(source.id == EH_SOURCE_ID || source.id == EXH_SOURCE_ID)
+            throttleManager.throttle()
+
         return backupManager.restoreMangaFetchObservable(source, manga)
                 .onErrorReturn {
+                    // [EXH]
+                    XLog.w("> Failed to restore manga!", it)
+                    XLog.w("> (source.id: %s, source.name: %s, manga.id: %s, manga.url: %s)",
+                            source.id,
+                            source.name,
+                            manga.id,
+                            manga.url)
+
                     errors.add(Date() to "${manga.title} - ${it.message}")
                     manga
                 }
@@ -391,9 +437,18 @@ class BackupRestoreService : Service() {
      * @return [Observable] that contains manga
      */
     private fun chapterFetchObservable(source: Source, manga: Manga, chapters: List<Chapter>): Observable<Pair<List<Chapter>, List<Chapter>>> {
-        return backupManager.restoreChapterFetchObservable(source, manga, chapters)
+        return backupManager.restoreChapterFetchObservable(source, manga, chapters, throttleManager)
                 // If there's any error, return empty update and continue.
                 .onErrorReturn {
+                    // [EXH]
+                    XLog.w("> Failed to restore chapter!", it)
+                    XLog.w("> (source.id: %s, source.name: %s, manga.id: %s, manga.url: %s, chapters.size: %s)",
+                            source.id,
+                            source.name,
+                            manga.id,
+                            manga.url,
+                            chapters.size)
+
                     errors.add(Date() to "${manga.title} - ${it.message}")
                     Pair(emptyList(), emptyList())
                 }

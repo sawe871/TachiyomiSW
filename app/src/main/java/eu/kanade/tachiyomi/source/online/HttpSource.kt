@@ -1,16 +1,18 @@
 package eu.kanade.tachiyomi.source.online
 
-import eu.kanade.tachiyomi.network.GET
-import eu.kanade.tachiyomi.network.NetworkHelper
-import eu.kanade.tachiyomi.network.asObservableSuccess
-import eu.kanade.tachiyomi.network.newCallWithProgress
+import android.app.Application
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import eu.kanade.tachiyomi.data.preference.getOrDefault
+import eu.kanade.tachiyomi.network.*
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.*
-import okhttp3.Headers
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
+import exh.source.DelegatedHttpSource
+import exh.ui.captcha.BrowserActionActivity
+import exh.util.interceptAsHtml
+import okhttp3.*
 import rx.Observable
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
 import java.lang.Exception
 import java.net.URI
@@ -25,7 +27,19 @@ abstract class HttpSource : CatalogueSource {
     /**
      * Network service.
      */
-    protected val network: NetworkHelper by injectLazy()
+    protected val network: NetworkHelper by lazy {
+        val original = Injekt.get<NetworkHelper>()
+        object : NetworkHelper(Injekt.get<Application>()) {
+            override val client: OkHttpClient?
+                get() = delegate?.networkHttpClient ?: original.client
+
+            override val cloudflareClient: OkHttpClient?
+                get() = delegate?.networkCloudflareClient ?: original.cloudflareClient
+
+            override val cookieManager: AndroidCookieJar
+                get() = original.cookieManager
+        }
+    }
 
 //    /**
 //     * Preferences that a source may need.
@@ -65,7 +79,22 @@ abstract class HttpSource : CatalogueSource {
      * Default network client for doing requests.
      */
     open val client: OkHttpClient
-        get() = network.client
+        get() = delegate?.baseHttpClient ?: network.client.newBuilder().addInterceptor { chain ->
+            // Automatic captcha detection
+            val response = chain.proceed(chain.request())
+            if(!response.isSuccessful) {
+                response.interceptAsHtml { doc ->
+                    if (doc.getElementsByClass("g-recaptcha").isNotEmpty()) {
+                        // Found it, allow the user to solve this thing
+                        BrowserActionActivity.launchUniversal(
+                                Injekt.get<Application>(),
+                                this,
+                                chain.request().url().toString()
+                        )
+                    }
+                }
+            } else response
+        }.build()
 
     /**
      * Headers builder for requests. Implementations can override this method for custom headers.
@@ -364,4 +393,14 @@ abstract class HttpSource : CatalogueSource {
      * Returns the list of filters for the source.
      */
     override fun getFilterList() = FilterList()
+
+    // EXH -->
+    private var delegate: DelegatedHttpSource? = null
+        get() = if(Injekt.get<PreferencesHelper>().eh_delegateSources().getOrDefault())
+            field
+        else null
+    fun bindDelegate(delegate: DelegatedHttpSource) {
+        this.delegate = delegate
+    }
+    // EXH <--
 }

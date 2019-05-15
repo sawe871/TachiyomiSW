@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.ui.setting
 import android.os.Build
 import android.support.v7.preference.PreferenceScreen
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.util.SharedData.map
 import eu.kanade.tachiyomi.data.preference.PreferenceKeys as Keys
 
 class SettingsReaderController : SettingsController() {
@@ -90,6 +91,80 @@ class SettingsReaderController : SettingsController() {
                 defaultValue = false
             }
         }
+        // EXH -->
+        intListPreference {
+            key = Keys.eh_readerThreads
+            title = "Download threads"
+            entries = arrayOf("1", "2", "3", "4", "5")
+            entryValues = entries
+            defaultValue = "2"
+            summary = "Higher values can speed up image downloading significantly, but can also trigger bans. Recommended value is 2 or 3. Current value is: %s"
+        }
+        switchPreference {
+            key = Keys.eh_aggressivePageLoading
+            title = "Aggressively load pages"
+            summary = "Slowly download the entire gallery while reading instead of just loading the pages you are viewing."
+            defaultValue = false
+        }
+        switchPreference {
+            key = Keys.eh_readerInstantRetry
+            title = "Skip queue on retry"
+            summary = "Normally, pressing the retry button on a failed download will wait until the downloader has finished downloading the last page before beginning to re-download the failed page. Enabling this will force the downloader to begin re-downloading the failed page as soon as you press the retry button."
+            defaultValue = true
+        }
+        listPreference {
+            key = Keys.eh_cacheSize
+            title = "Reader cache size"
+            entryValues = arrayOf(
+                    "50",
+                    "75",
+                    "100",
+                    "150",
+                    "250",
+                    "500",
+                    "750",
+                    "1000",
+                    "1500",
+                    "2000",
+                    "2500",
+                    "3000",
+                    "3500",
+                    "4000",
+                    "4500",
+                    "5000"
+            )
+            entries = arrayOf(
+                    "50 MB",
+                    "75 MB",
+                    "100 MB",
+                    "150 MB",
+                    "250 MB",
+                    "500 MB",
+                    "750 MB",
+                    "1 GB",
+                    "1.5 GB",
+                    "2 GB",
+                    "2.5 GB",
+                    "3 GB",
+                    "3.5 GB",
+                    "4 GB",
+                    "4.5 GB",
+                    "5 GB"
+            )
+            defaultValue = "75"
+            summary = "The amount of images to save on device while reading. Higher values will result in a smoother reading experience, at the cost of higher disk space usage"
+        }
+        switchPreference {
+            key = Keys.eh_preserveReadingPosition
+            title = "Preserve reading position on read manga"
+            defaultValue = false
+        }
+        switchPreference {
+            key = Keys.eh_showTransitionPages
+            title = "Show transition pages between chapters"
+            defaultValue = true
+        }
+        // EXH <--
         preferenceCategory {
             titleRes = R.string.pager_viewer
 

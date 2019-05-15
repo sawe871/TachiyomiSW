@@ -1,8 +1,7 @@
 -dontobfuscate
 
 -dontwarn eu.kanade.tachiyomi.**
--keep class eu.kanade.tachiyomi.**
--keep class eu.kanade.tachiyomi.source.model.** { *; }
+-keep class eu.kanade.tachiyomi.** { *; }
 
 -keep class com.hippo.image.** { *; }
 -keep interface com.hippo.image.** { *; }
@@ -90,3 +89,49 @@
 
 # Duktape
 -keep class com.squareup.duktape.** { *; }
+
+# [EH]
+-keep class exh.** { *; }
+-dontwarn com.fasterxml.jackson.databind.ext.DOMSerializer
+-dontwarn com.fasterxml.jackson.databind.ext.Java7SupportImpl
+-dontwarn com.fasterxml.jackson.module.kotlin.KotlinNamesAnnotationIntrospector$hasCreatorAnnotation$1
+-dontwarn com.fasterxml.jackson.module.kotlin.KotlinValueInstantiator
+-dontwarn exh.metadata.MetadataUtilKt$joinTagsToGenreString$2
+-keep class xyz.nulldev.** { *; }
+
+## Attempt to fix: java.lang.NoClassDefFoundError: uy.kohesive.injekt.registry.default.DefaultRegistrar$NOKEY$1
+-keep class uy.kohesive.injekt.** { *; }
+
+# Realm
+-dontnote rx.internal.util.PlatformDependent
+-keep public class * extends io.realm.RealmObject
+-keep public class * implements io.realm.RealmModel
+-keep class io.realm.annotations.RealmModule
+-keep @io.realm.annotations.RealmModule class *
+-keep class io.realm.internal.Keep
+-keep @io.realm.internal.Keep class *
+-dontwarn io.realm.**
+
+# Keep google stuff
+-dontwarn com.google.android.gms.**
+-dontwarn com.google.firebase.**
+
+# Jackson
+# Proguard configuration for Jackson 2.x
+-keep class com.fasterxml.jackson.databind.ObjectMapper {
+    public <methods>;
+    protected <methods>;
+}
+-keep class com.fasterxml.jackson.databind.ObjectWriter {
+    public ** writeValueAsString(**);
+}
+-keepnames class com.fasterxml.jackson.** { *; }
+-dontwarn com.fasterxml.jackson.databind.**
+# Proguard configuration for Jackson 2.x
+-dontwarn com.fasterxml.jackson.databind.**
+-keepclassmembers class * {
+     @com.fasterxml.jackson.annotation.* *;
+}
+
+# Better Proguard + sugarify compatibility
+-keepattributes EnclosingMethod

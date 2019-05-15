@@ -7,4 +7,10 @@
 *iml
 *.iml
 */build
+/mainframer
+/.mainframer
+*.apk
+TODO.md
+CHANGELOG.md
+/captures
 build.sh

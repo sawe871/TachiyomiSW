@@ -45,12 +45,6 @@ class SettingsAboutController : SettingsController() {
         titleRes = R.string.pref_category_about
 
         switchPreference {
-            key = "acra.enable"
-            titleRes = R.string.pref_enable_acra
-            summaryRes = R.string.pref_acra_summary
-            defaultValue = true
-        }
-        switchPreference {
             key = Keys.automaticUpdates
             titleRes = R.string.pref_enable_automatic_updates
             summaryRes = R.string.pref_enable_automatic_updates_summary
@@ -71,17 +65,8 @@ class SettingsAboutController : SettingsController() {
             }
         }
         preference {
-            title = "Discord"
-            val url = "https://discord.gg/tachiyomi"
-            summary = url
-            onClick {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                startActivity(intent)
-            }
-        }
-        preference {
             title = "Github"
-            val url = "https://github.com/inorichi/tachiyomi"
+            val url = "https://github.com/NerdNumber9/TachiyomiEH"
             summary = url
             onClick {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))

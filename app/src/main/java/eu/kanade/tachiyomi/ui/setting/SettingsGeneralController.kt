@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.setting
 
 import android.app.Dialog
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.support.v7.preference.PreferenceScreen
@@ -13,6 +14,8 @@ import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.data.preference.getOrDefault
 import eu.kanade.tachiyomi.ui.base.controller.DialogController
 import eu.kanade.tachiyomi.util.LocaleHelper
+import exh.ui.lock.FingerLockPreference
+import exh.ui.lock.LockPreference
 import kotlinx.android.synthetic.main.pref_library_columns.view.*
 import rx.Observable
 import uy.kohesive.injekt.Injekt
@@ -31,7 +34,7 @@ class SettingsGeneralController : SettingsController() {
             titleRes = R.string.pref_language
             entryValues = arrayOf("", "ar", "bg", "bn", "ca", "cs", "de", "el", "en-US", "en-GB",
             "es", "fr", "hi", "hu", "in", "it", "ja", "ko", "lv", "ms", "nb-rNO", "nl", "pl", "pt",
-            "pt-BR", "ro", "ru", "sr", "sv", "th", "tr", "uk", "vi", "zh-rCN")
+            "pt-BR", "ro", "ru", "sc", "sr", "sv", "th", "tl", "tr", "uk", "vi", "zh-rCN")
             entries = entryValues.map { value ->
                 val locale = LocaleHelper.getLocaleFromString(value.toString())
                 locale?.getDisplayName(locale)?.capitalize() ?:
@@ -177,6 +180,64 @@ class SettingsGeneralController : SettingsController() {
                 true
             }
         }
+
+        // --> EXH
+        switchPreference {
+            key = Keys.eh_askCategoryOnLongPress
+            title = "Long-press favorite button to specify category"
+            defaultValue = false
+        }
+
+        switchPreference {
+            key = Keys.eh_expandFilters
+            title = "Expand all search filters by default"
+            defaultValue = false
+        }
+
+        switchPreference {
+            key = Keys.eh_autoSolveCaptchas
+            title = "Automatically solve captcha"
+            summary = "Use HIGHLY EXPERIMENTAL automatic ReCAPTCHA solver. Will be grayed out if unsupported by your device."
+            defaultValue = false
+            shouldDisableView = Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
+        }
+
+        switchPreference {
+            key = Keys.eh_incogWebview
+            title = "Incognito 'Open in browser'"
+            summary = "Prevent pages viewed from the 'Open in browser' menu option from being placed into Chrome's browsing history. May be buggy, some browser features will be unavailable."
+            defaultValue = false
+        }
+
+        preferenceCategory {
+            title = "Application lock"
+
+            LockPreference(context).apply {
+                key = "pref_app_lock" // Not persistent so use random key
+                isPersistent = false
+
+                addPreference(this)
+            }
+
+            FingerLockPreference(context).apply {
+                key = "pref_lock_finger" // Not persistent so use random key
+                isPersistent = false
+
+                addPreference(this)
+
+                //Call after addPreference
+                dependency = "pref_app_lock"
+            }
+
+            switchPreference {
+                key = Keys.eh_lock_manually
+
+                title = "Lock manually only"
+                summary = "Disable automatic app locking. The app can still be locked manually by long-pressing the three-lines/back button in the top left corner."
+                defaultValue = false
+            }
+        }
+        // <-- EXH
     }
 
     class LibraryColumnsDialog : DialogController() {

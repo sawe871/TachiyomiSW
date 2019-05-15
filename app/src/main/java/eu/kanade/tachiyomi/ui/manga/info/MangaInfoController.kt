@@ -8,25 +8,20 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.support.customtabs.CustomTabsIntent
 import android.support.v4.content.pm.ShortcutInfoCompat
 import android.support.v4.content.pm.ShortcutManagerCompat
 import android.support.v4.graphics.drawable.IconCompat
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Toast
 import com.afollestad.materialdialogs.MaterialDialog
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
+import com.bumptech.glide.signature.ObjectKey
+import com.elvishew.xlog.XLog
 import com.jakewharton.rxbinding.support.v4.widget.refreshes
 import com.jakewharton.rxbinding.view.clicks
 import com.jakewharton.rxbinding.view.longClicks
@@ -36,6 +31,7 @@ import eu.kanade.tachiyomi.data.database.models.Manga
 import eu.kanade.tachiyomi.data.glide.GlideApp
 import eu.kanade.tachiyomi.data.notification.NotificationReceiver
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
+import eu.kanade.tachiyomi.data.preference.getOrDefault
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -46,17 +42,21 @@ import eu.kanade.tachiyomi.ui.catalogue.global_search.CatalogueSearchController
 import eu.kanade.tachiyomi.ui.library.ChangeMangaCategoriesDialog
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.manga.MangaController
-import eu.kanade.tachiyomi.util.getResourceColor
+import eu.kanade.tachiyomi.util.openInBrowser
 import eu.kanade.tachiyomi.util.snack
 import eu.kanade.tachiyomi.util.toast
 import eu.kanade.tachiyomi.util.truncateCenter
+import exh.EH_SOURCE_ID
+import exh.EXH_SOURCE_ID
+import exh.NHENTAI_SOURCE_ID
+import exh.ui.webview.WebViewActivity
 import jp.wasabeef.glide.transformations.CropSquareTransformation
 import jp.wasabeef.glide.transformations.MaskTransformation
 import kotlinx.android.synthetic.main.manga_info_controller.*
 import uy.kohesive.injekt.injectLazy
 import java.text.DateFormat
 import java.text.DecimalFormat
-import java.util.Date
+import java.util.*
 
 /**
  * Fragment that shows manga information.
@@ -70,6 +70,10 @@ class MangaInfoController : NucleusController<MangaInfoPresenter>(),
      * Preferences helper.
      */
     private val preferences: PreferencesHelper by injectLazy()
+
+    // EXH -->
+    private var lastMangaThumbnail: String? = null
+    // EXH <--
 
     init {
         setHasOptionsMenu(true)
@@ -91,6 +95,7 @@ class MangaInfoController : NucleusController<MangaInfoPresenter>(),
 
         // Set onclickListener to toggle favorite when FAB clicked.
         fab_favorite.clicks().subscribeUntilDestroy { onFabClick() }
+        fab_favorite.longClicks().subscribeUntilDestroy { onFabLongClick() }
 
         // Set SwipeRefresh to refresh manga data.
         swipe_refresh.refreshes().subscribeUntilDestroy { fetchMangaFromSource() }
@@ -108,22 +113,38 @@ class MangaInfoController : NucleusController<MangaInfoPresenter>(),
         }
 
         manga_artist.clicks().subscribeUntilDestroy {
-            performGlobalSearch(manga_artist.text.toString())
+            //EXH Special case E-Hentai/ExHentai to use tag based search
+            var text = manga_artist.text.toString()
+            if(isEHentaiBasedSource())
+                text = wrapTag("artist", text)
+            performGlobalSearch(text)
         }
 
         manga_author.longClicks().subscribeUntilDestroy {
-            copyToClipboard(manga_author.text.toString(), manga_author.text.toString())
+            //EXH Special case E-Hentai/ExHentai to ignore author field (unused)
+            if(!isEHentaiBasedSource())
+                copyToClipboard(manga_author.text.toString(), manga_author.text.toString())
         }
 
         manga_author.clicks().subscribeUntilDestroy {
-            performGlobalSearch(manga_author.text.toString())
+            //EXH Special case E-Hentai/ExHentai to ignore author field (unused)
+            if(!isEHentaiBasedSource())
+                performGlobalSearch(manga_author.text.toString())
         }
 
         manga_summary.longClicks().subscribeUntilDestroy {
             copyToClipboard(view.context.getString(R.string.description), manga_summary.text.toString())
         }
 
-        //manga_genres_tags.setOnTagClickListener { tag -> performGlobalSearch(tag) }
+        manga_genres_tags.setOnTagClickListener { tag ->
+            //EXH Special case E-Hentai/ExHentai to use tag based search
+            var text = tag
+            if(isEHentaiBasedSource() || presenter.source.id == NHENTAI_SOURCE_ID) {
+                val parsed = parseTag(text)
+                text = wrapTag(parsed.first, parsed.second.substringBefore('|').trim())
+            }
+            performGlobalSearch(text)
+        }
 
         manga_cover.longClicks().subscribeUntilDestroy {
             copyToClipboard(view.context.getString(R.string.title), presenter.manga.title)
@@ -138,6 +159,7 @@ class MangaInfoController : NucleusController<MangaInfoPresenter>(),
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_open_in_browser -> openInBrowser()
+            R.id.action_open_in_web_view -> openInWebView()
             R.id.action_share -> shareManga()
             R.id.action_add_to_home_screen -> addToHomeScreen()
             else -> return super.onOptionsItemSelected(item)
@@ -158,6 +180,7 @@ class MangaInfoController : NucleusController<MangaInfoPresenter>(),
             // Update view.
             setMangaInfo(manga, source)
 
+            if((parentController as MangaController).update) fetchMangaFromSource()
         } else {
             // Initialize manga.
             fetchMangaFromSource()
@@ -224,10 +247,17 @@ class MangaInfoController : NucleusController<MangaInfoPresenter>(),
         // Set the favorite drawable to the correct one.
         setFavoriteDrawable(manga.favorite)
 
-        // Set cover if it wasn't already.
-        if (manga_cover.drawable == null && !manga.thumbnail_url.isNullOrEmpty()) {
+        // Set cover if it matches
+        val tagMatches = lastMangaThumbnail == manga.thumbnail_url
+        val coverLoaded = manga_cover.drawable != null
+        if ((!tagMatches || !coverLoaded) && !manga.thumbnail_url.isNullOrEmpty()) {
+            lastMangaThumbnail = manga.thumbnail_url
+
+            val coverSig = ObjectKey(manga.thumbnail_url ?: "")
+
             GlideApp.with(view.context)
                     .load(manga)
+                    .signature(coverSig)
                     .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
                     .centerCrop()
                     .into(manga_cover)
@@ -235,6 +265,7 @@ class MangaInfoController : NucleusController<MangaInfoPresenter>(),
             if (backdrop != null) {
                 GlideApp.with(view.context)
                         .load(manga)
+                        .signature(coverSig)
                         .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
                         .centerCrop()
                         .into(backdrop)
@@ -292,14 +323,32 @@ class MangaInfoController : NucleusController<MangaInfoPresenter>(),
         val source = presenter.source as? HttpSource ?: return
 
         try {
-            val url = Uri.parse(source.mangaDetailsRequest(presenter.manga).url().toString())
-            val intent = CustomTabsIntent.Builder()
-                    .setToolbarColor(context.getResourceColor(R.attr.colorPrimary))
-                    .build()
-            intent.launchUrl(activity, url)
+            // --> EH
+            val urlString = source.mangaDetailsRequest(presenter.manga).url().toString()
+            if(preferences.eh_incogWebview().getOrDefault()) {
+                activity?.startActivity(Intent(activity, WebViewActivity::class.java).apply {
+                    putExtra(WebViewActivity.KEY_URL, urlString)
+                })
+            } else {
+                context.openInBrowser(source.mangaDetailsRequest(presenter.manga).url().toString())
+            }
+            // <-- EH
         } catch (e: Exception) {
             context.toast(e.message)
         }
+    }
+
+    private fun openInWebView() {
+        val source = presenter.source as? HttpSource ?: return
+
+        val url = try {
+            source.mangaDetailsRequest(presenter.manga).url().toString()
+        } catch (e: Exception) {
+            return
+        }
+
+        parentController?.router?.pushController(MangaWebViewController(source.id, url)
+            .withFadeTransaction())
     }
 
     /**
@@ -358,6 +407,14 @@ class MangaInfoController : NucleusController<MangaInfoPresenter>(),
     fun onFetchMangaError(error: Throwable) {
         setRefreshing(false)
         activity?.toast(error.message)
+
+        // [EXH]
+        XLog.w("> Failed to fetch manga details!", error)
+        XLog.w("> (source.id: %s, source.name: %s, manga.id: %s, manga.url: %s)",
+                presenter.source.id,
+                presenter.source.name,
+                presenter.manga.id,
+                presenter.manga.url)
     }
 
     /**
@@ -382,20 +439,33 @@ class MangaInfoController : NucleusController<MangaInfoPresenter>(),
                 defaultCategory != null -> presenter.moveMangaToCategory(manga, defaultCategory)
                 categories.size <= 1 -> // default or the one from the user
                     presenter.moveMangaToCategory(manga, categories.firstOrNull())
-                else -> {
-                    val ids = presenter.getMangaCategoryIds(manga)
-                    val preselected = ids.mapNotNull { id ->
-                        categories.indexOfFirst { it.id == id }.takeIf { it != -1 }
-                    }.toTypedArray()
-
-                    ChangeMangaCategoriesDialog(this, listOf(manga), categories, preselected)
-                            .showDialog(router)
-                }
+                else -> askCategories(manga, categories)
             }
             activity?.toast(activity?.getString(R.string.manga_added_library))
         } else {
             activity?.toast(activity?.getString(R.string.manga_removed_library))
         }
+    }
+
+    private fun onFabLongClick() {
+        if(preferences.eh_askCategoryOnLongPress().getOrDefault()) {
+            val manga = presenter.manga
+            if(!manga.favorite) toggleFavorite()
+            val categories = presenter.getCategories()
+            if(categories.size > 1) {
+                askCategories(manga, categories)
+            }
+        }
+    }
+
+    private fun askCategories(manga: Manga, categories: List<Category>) {
+        val ids = presenter.getMangaCategoryIds(manga)
+        val preselected = ids.mapNotNull { id ->
+            categories.indexOfFirst { it.id == id }.takeIf { it != -1 }
+        }.toTypedArray()
+
+        ChangeMangaCategoriesDialog(this, listOf(manga), categories, preselected)
+                .showDialog(router)
     }
 
     override fun updateCategoriesForMangas(mangas: List<Manga>, categories: List<Category>) {
@@ -500,6 +570,22 @@ class MangaInfoController : NucleusController<MangaInfoPresenter>(),
         val router = parentController?.router ?: return
         router.pushController(CatalogueSearchController(query).withFadeTransaction())
     }
+
+    // --> EH
+    private fun wrapTag(namespace: String, tag: String)
+            = if(tag.contains(' '))
+        "$namespace:\"$tag$\""
+    else
+        "$namespace:$tag$"
+
+    private fun parseTag(tag: String) = tag.substringBefore(':').trim() to tag.substringAfter(':').trim()
+
+    private fun isEHentaiBasedSource(): Boolean {
+        val sourceId = presenter.source.id
+        return sourceId == EH_SOURCE_ID
+                || sourceId == EXH_SOURCE_ID
+    }
+    // <-- EH
 
     /**
      * Create shortcut using ShortcutManager.
