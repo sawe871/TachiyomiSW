@@ -9,16 +9,16 @@ import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
-import eu.kanade.tachiyomi.source.online.all.EHentai
-import eu.kanade.tachiyomi.source.online.all.Hitomi
+//import eu.kanade.tachiyomi.source.online.all.EHentai
+//import eu.kanade.tachiyomi.source.online.all.Hitomi
 import eu.kanade.tachiyomi.source.online.all.MergedSource
-import eu.kanade.tachiyomi.source.online.all.NHentai
-import eu.kanade.tachiyomi.source.online.all.PervEden
-import eu.kanade.tachiyomi.source.online.english.EightMuses
-import eu.kanade.tachiyomi.source.online.english.HBrowse
-import eu.kanade.tachiyomi.source.online.english.HentaiCafe
-import eu.kanade.tachiyomi.source.online.english.Pururin
-import eu.kanade.tachiyomi.source.online.english.Tsumino
+//import eu.kanade.tachiyomi.source.online.all.NHentai
+//import eu.kanade.tachiyomi.source.online.all.PervEden
+//import eu.kanade.tachiyomi.source.online.english.EightMuses
+//import eu.kanade.tachiyomi.source.online.english.HBrowse
+//import eu.kanade.tachiyomi.source.online.english.HentaiCafe
+//import eu.kanade.tachiyomi.source.online.english.Pururin
+//import eu.kanade.tachiyomi.source.online.english.Tsumino
 import exh.EH_SOURCE_ID
 import exh.EXH_SOURCE_ID
 import exh.PERV_EDEN_EN_SOURCE_ID
@@ -150,7 +150,7 @@ open class SourceManager(private val context: Context) {
         }
     }
 
-    companion object {
+/*    companion object {
         val DELEGATED_SOURCES = listOf(
             DelegatedSource(
                 "Hentai Cafe",
@@ -179,6 +179,6 @@ open class SourceManager(private val context: Context) {
             val newSourceClass: KClass<out DelegatedHttpSource>
         )
     }
-}
+}*/
 
 class SourceNotFoundException(message: String, val id: Long) : Exception(message)
