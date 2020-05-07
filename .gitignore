@@ -24,4 +24,4 @@ app/**/output.json
 app/src/main/res/values-iw/
 
 #personal tools
-symlinks/
+#symlinks/
