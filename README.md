@@ -1,3 +1,4 @@
-I dont want to maintain a readme
-
-https://discord.gg/tachiyomi
+TODO
+Remove native support for ehentai
+Remove native support for nhentai
+Remove native support for other nsfw sources
