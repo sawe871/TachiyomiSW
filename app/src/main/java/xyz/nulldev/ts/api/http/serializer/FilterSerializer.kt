@@ -45,6 +45,7 @@ class FilterSerializer {
         for (serializer in serializers) {
             if (filter::class.isSubclassOf(serializer.clazz)) {
                 // TODO Not sure how to deal with the mess of types here
+                // Let's just wait for upstream to take care of it
                 serializer as Serializer<Filter<Any?>>
 
                 serializer.serialize(out, filter)

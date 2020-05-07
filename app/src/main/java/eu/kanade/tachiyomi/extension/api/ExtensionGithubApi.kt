@@ -20,6 +20,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.Response
 import uy.kohesive.injekt.injectLazy
 
+//From what I can tell, this helps with downloading and updating extensions
+
 internal class ExtensionGithubApi {
 
     private val network: NetworkHelper by injectLazy()
